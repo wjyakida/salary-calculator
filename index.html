@@ -3,136 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v4.9</title>
+    <title>연봉 인상 시뮬레이터 v5.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 기본 레이아웃: PC에서는 컴팩트하게, 모바일에서는 유연하게 */
-        table { border-collapse: collapse; width: 100%; min-width: 1200px; table-layout: fixed; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; }
-        th { background-color: #f8fafc; color: #475569; text-align: center; font-weight: 800; border-bottom: 2px solid #cbd5e1; }
+        /* 기본 레이아웃 및 폰트 설정 */
+        body { font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; }
         
-        /* 데이터 정렬 규칙: 금액은 우측, 텍스트는 중앙 */
-        #tableBody td { text-align: right; color: #1e293b; font-weight: 600; }
-        #tableBody td:nth-child(1), #tableBody td:nth-child(2), #tableBody td:nth-child(3), #tableBody td:nth-child(4) { 
-            text-align: center; font-weight: 500; 
+        /* 테이블 공통 스타일 */
+        .table-fixed-layout { border-collapse: collapse; width: 100%; min-width: 1250px; table-layout: fixed; }
+        .table-fixed-layout th, .table-fixed-layout td { 
+            border: 1px solid #e2e8f0; 
+            padding: 12px 10px; 
+            font-size: 0.85rem; 
+            letter-spacing: -0.02em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
+        .table-fixed-layout th { background-color: #f8fafc; color: #475569; font-weight: 800; border-bottom: 2px solid #cbd5e1; }
         
-        .bg-highlight { background-color: #f0f9ff; font-weight: 800; color: #0284c7; border-bottom: 3px solid #0284c7; }
+        /* [중요] 정렬 및 숫자 폰트 */
+        .num-font { font-variant-numeric: tabular-nums; }
+        #tableBody td { color: #1e293b; font-weight: 600; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
+        
+        /* 행 하이라이트 */
+        .bg-highlight { background-color: #f0f9ff; font-weight: 800 !important; color: #0284c7 !important; border-bottom: 2px solid #0284c7; }
         .bg-history { background-color: #ffffff; }
         
-        /* 모달 디자인 */
-        .modal-table { min-width: 900px; }
-        .modal-table th { background-color: #1e293b; color: white; padding: 12px; font-size: 0.9rem; }
-        .modal-table td { padding: 10px; font-size: 0.9rem; border: 1px solid #e2e8f0; text-align: center; }
-        .modal-table td.num-cell { text-align: right; font-weight: 700; }
+        /* 모달 스타일 */
+        .modal-table { min-width: 1000px; }
+        .modal-table th { background-color: #1e293b; color: white; padding: 14px; font-size: 0.9rem; }
+        .modal-table td { padding: 12px; font-size: 0.9rem; border: 1px solid #e2e8f0; }
 
+        /* 로딩 애니메이션 */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3b82f6;
             border-radius: 50%;
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 입력창 디자인 */
-        .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.8rem; font-weight: 800; color: #475569; white-space: nowrap; }
-        select, input { height: 40px !important; font-size: 0.95rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; }
-        input:focus, select:focus { border-color: #3b82f6 !important; ring: 3px; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        /* 입력창 디자인 최적화 */
+        .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 0.8rem; font-weight: 800; color: #475569; }
+        select, input { height: 38px !important; font-size: 0.95rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; }
+        input:focus, select:focus { border-color: #3b82f6 !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         
-        /* 모바일 전용 반응형 스타일 대폭 보정 */
+        /* 모바일 대응 (반응형 정렬) */
         @media (max-width: 768px) {
             body { padding: 0.5rem !important; }
             .main-container { border-radius: 1.25rem !important; }
-            .header-content { padding: 1rem 0.75rem !important; }
-            .input-section { padding: 1rem 0.75rem !important; }
+            .header-content { padding: 0.75rem 1rem !important; }
+            .input-section { padding: 1rem 1rem !important; }
             
-            /* 결과 배너 숫자 잘림 방지 */
-            .result-banner { padding: 1.25rem 0.75rem !important; flex-direction: column !important; gap: 0.75rem !important; }
-            .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.75rem; }
+            /* 결과 배너 최적화: 숫자가 절대 잘리지 않도록 세로 정렬 */
+            .result-banner { padding: 1.5rem 1rem !important; flex-direction: column !important; gap: 1rem !important; }
+            .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
             .result-item:last-child { border-bottom: none; padding-bottom: 0; }
             
-            /* 수치 텍스트 크기 최적화 */
-            .val-large { font-size: 1.5rem !important; }
-            .val-xlarge { font-size: 1.85rem !important; }
+            .val-large { font-size: 1.4rem !important; line-height: 1.2; }
+            .val-xlarge { font-size: 1.75rem !important; line-height: 1.1; }
             
-            .table-container { padding: 0.25rem !important; }
-            table { min-width: 900px; } /* 모바일에서 표의 숨통을 조금 더 틔움 */
-            th, td { padding: 8px 4px; font-size: 0.75rem; }
-            
-            /* 버튼 텍스트가 넘치지 않게 조절 */
-            .btn-text { font-size: 0.7rem !important; }
+            /* 모바일 표 스크롤 영역 */
+            .table-container { padding: 0.5rem !important; }
+            .table-fixed-layout { min-width: 1100px; } /* 데이터 가독성을 위해 최소 너비 확보 */
+            .table-fixed-layout th, .table-fixed-layout td { padding: 10px 6px; font-size: 0.75rem; }
         }
 
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-slate-100 p-3 md:p-6 text-slate-900">
+<body class="bg-slate-100 p-2 md:p-6 text-slate-900">
 
     <!-- 로딩 오버레이 -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-95 z-[100] flex flex-col justify-center items-center text-center">
-        <div class="loader mb-4 shadow-sm"></div>
-        <p class="text-slate-800 font-bold text-lg" id="loadingText">보안 시스템 확인 중...</p>
+        <div class="loader mb-4"></div>
+        <p class="text-slate-800 font-bold text-lg" id="loadingText">구글 클라우드와 통신 중...</p>
     </div>
 
-    <!-- 커스텀 확인창 (Confirm Modal) -->
+    <!-- 확인창 모달 -->
     <div id="confirmModal" class="hidden fixed inset-0 bg-black/60 z-[200] flex justify-center items-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center">
-            <p id="confirmMessage" class="text-lg font-bold text-slate-800 mb-6">정말로 실행하시겠습니까?</p>
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center fade-in">
+            <p id="confirmMessage" class="text-lg font-bold text-slate-800 mb-6">정말로 진행하시겠습니까?</p>
             <div class="flex gap-3">
-                <button onclick="closeConfirm(false)" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition">취소</button>
+                <button onclick="closeConfirm(false)" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition">취소</button>
                 <button id="confirmYesBtn" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition shadow-lg">확인</button>
             </div>
         </div>
     </div>
 
-    <!-- 구글 로그인 전용 섹션 -->
+    <!-- 구글 로그인 화면 -->
     <div id="authSection" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 md:p-10 rounded-[40px] shadow-2xl w-full max-w-md text-center fade-in">
+        <div class="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md text-center fade-in border border-slate-100">
             <div class="mb-8">
-                <div class="w-16 h-16 md:w-20 md:h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-8 h-8 md:w-10 md:h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.92 3.32-2.12 4.4-1.2 1.2-3 2.12-5.72 2.12-4.52 0-8.16-3.64-8.16-8.16s3.64-8.16 8.16-8.16c2.48 0 4.36.96 5.68 2.2l2.32-2.32C18.6 2.44 15.76 1 12.48 1c-6.08 0-11 4.92-11 11s4.92 11 11 11c3.28 0 6.04-1.08 8.12-3.24 2.12-2.12 2.84-5.12 2.84-7.68 0-.52-.04-1.04-.12-1.52H12.48z"/></svg>
+                <div class="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.92 3.32-2.12 4.4-1.2 1.2-3 2.12-5.72 2.12-4.52 0-8.16-3.64-8.16-8.16s3.64-8.16 8.16-8.16c2.48 0 4.36.96 5.68 2.2l2.32-2.32C18.6 2.44 15.76 1 12.48 1c-6.08 0-11 4.92-11 11s4.92 11 11 11c3.28 0 6.04-1.08 8.12-3.24 2.12-2.12 2.84-5.12 2.84-7.68 0-.52-.04-1.04-.12-1.52H12.48z"/></svg>
                 </div>
-                <h2 class="text-2xl md:text-3xl font-black text-slate-800 mb-3">계정 연결</h2>
-                <p class="text-sm md:text-base text-slate-500 font-medium leading-relaxed">데이터 보호 및 동기화를 위해<br>구글 계정으로 로그인해 주세요.</p>
+                <h2 class="text-3xl font-black text-slate-800 mb-2">시뮬레이터 시작</h2>
+                <p class="text-sm text-slate-500 font-medium">개인 데이터 보안을 위해<br>구글 로그인이 필요합니다.</p>
             </div>
-            <div id="authErrorMessage" class="text-red-500 text-[11px] font-bold mb-4 min-h-[1.5rem] leading-tight text-center"></div>
-            <button onclick="handleGoogleLogin()" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-lg shadow-xl transition transform active:scale-95">
-                구글 계정으로 시작하기
+            <div id="authErrorMessage" class="text-red-500 text-[11px] font-bold mb-4 min-h-[1rem]"></div>
+            <button onclick="handleGoogleLogin()" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-lg shadow-xl transition transform active:scale-95">
+                구글로 로그인
             </button>
         </div>
     </div>
 
-    <!-- 메인 시뮬레이터 섹션 -->
+    <!-- 메인 대시보드 -->
     <div id="mainAppSection" class="hidden main-container max-w-[1700px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 fade-in">
         
-        <!-- 헤더 -->
+        <!-- 상단 헤더 -->
         <div class="header-content bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
-            <div class="flex flex-col sm:flex-row items-center gap-2 md:gap-3">
-                <h1 class="text-lg md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.9</span></h1>
+            <div class="flex flex-col sm:flex-row items-center gap-3">
+                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.1</span></h1>
                 <div class="flex items-center gap-2">
-                    <span id="syncStatus" class="text-[9px] md:text-[10px] bg-slate-700 text-slate-400 border border-slate-600 px-2 md:px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
-                    <span id="userDisplay" class="text-[9px] md:text-[10px] text-slate-400 font-medium hidden sm:inline"></span>
+                    <span id="syncStatus" class="text-[9px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
+                    <span id="userDisplay" class="text-[9px] text-slate-500 font-medium hidden sm:inline"></span>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center gap-1.5 md:gap-2">
-                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition shadow-sm">📋 이력보기</button>
-                <button onclick="askUndo()" class="bg-slate-600 hover:bg-slate-500 text-white px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition shadow-sm">↩ 삭제</button>
-                <button onclick="askReset()" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition shadow-sm">🔄 초기화</button>
-                <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-900 text-slate-300 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition">로그아웃</button>
+            <div class="flex flex-wrap justify-center gap-2">
+                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">📋 전체 이력</button>
+                <button onclick="askUndo()" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">↩ 기록 삭제</button>
+                <button onclick="askReset()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">🔄 초기화</button>
+                <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-900 text-slate-400 px-3 py-2 rounded-lg text-xs font-bold transition">로그아웃</button>
             </div>
         </div>
 
-        <!-- 입력 영역 -->
+        <!-- 시뮬레이션 입력 영역 -->
         <div class="input-section p-6 bg-white border-b border-slate-100">
-            <div class="grid grid-cols-2 lg:grid-cols-12 gap-3 md:gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6">
                 <div class="col-span-1 lg:col-span-2 input-group">
                     <label>📈 물가(α)</label>
                     <div class="relative">
-                        <input type="number" id="alphaInput" value="3.0" step="0.1" class="pr-8 font-bold">
-                        <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-sm">%</span>
+                        <input type="number" id="alphaInput" value="3.0" step="0.1" class="pr-7 font-bold num-font">
+                        <span class="absolute right-2 top-2 text-slate-400 font-bold text-xs">%</span>
                     </div>
                 </div>
                 <div class="col-span-1 lg:col-span-2 input-group">
@@ -151,55 +160,55 @@
                     <select id="compInput" class="font-bold cursor-pointer"></select>
                 </div>
                 <div class="col-span-2 lg:col-span-2 input-group">
-                    <label>🗓️ 적용 시점</label>
+                    <label>🗓️ 적용 년.월</label>
                     <div class="flex items-center gap-1.5">
-                        <input type="number" id="yearInput" class="flex-1 text-center font-bold" placeholder="년도">
+                        <input type="number" id="yearInput" class="flex-1 text-center font-bold num-font" placeholder="년도">
                         <span class="font-bold text-slate-300">.</span>
-                        <input type="number" id="monthInput" value="12" min="1" max="12" class="w-14 md:w-16 text-center font-bold">
+                        <input type="number" id="monthInput" value="12" min="1" max="12" class="w-16 text-center font-bold num-font">
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 결과 요약 배너 -->
+        <!-- 핵심 결과 배너 (반응형 폰트 적용) -->
         <div class="result-banner bg-blue-50 border-y border-blue-100 px-8 py-6 flex flex-col lg:flex-row justify-between items-center gap-6">
-            <div class="flex flex-wrap lg:flex-nowrap gap-4 md:gap-10 text-center lg:text-left justify-center lg:justify-start w-full">
-                <div class="result-item min-w-[100px]">
-                    <span class="text-slate-500 text-[9px] md:text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Target Rate</span>
-                    <span class="val-large text-xl md:text-2xl font-black text-blue-700 tracking-tighter"><span id="totalRateText">4.0</span>% / <span id="bonusRateText">0</span>%</span>
+            <div class="flex flex-wrap lg:flex-nowrap gap-4 md:gap-12 text-center lg:text-left justify-center lg:justify-start w-full">
+                <div class="result-item min-w-[120px]">
+                    <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Target Rate</span>
+                    <span class="val-large text-2xl md:text-3xl font-black text-blue-700 tracking-tighter num-font"><span id="totalRateText">4.0</span>% / <span id="bonusRateText">0</span>%</span>
                 </div>
-                <div class="result-item border-l border-blue-200 pl-0 md:pl-10 min-w-[130px]">
-                    <span class="text-slate-500 text-[9px] md:text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Annual Increase</span>
-                    <span class="val-large text-xl md:text-2xl font-black text-blue-700 tracking-tighter" id="increaseAmountText">+0원</span>
+                <div class="result-item lg:border-l border-blue-200 lg:pl-10 min-w-[160px]">
+                    <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Annual Increase</span>
+                    <span class="val-large text-2xl md:text-3xl font-black text-blue-700 tracking-tighter num-font" id="increaseAmountText">+0원</span>
                 </div>
-                <div class="result-item border-l border-blue-200 pl-0 md:pl-10">
-                    <span class="text-emerald-700 text-[9px] md:text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Monthly Net (Est.)</span>
-                    <span class="val-xlarge text-2xl md:text-3xl font-black text-emerald-600 tracking-tighter" id="monthlyNetText">0원</span>
+                <div class="result-item lg:border-l border-blue-200 lg:pl-10">
+                    <span class="text-emerald-700 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Monthly Net (Est.)</span>
+                    <span class="val-xlarge text-3xl md:text-4xl font-black text-emerald-600 tracking-tighter num-font" id="monthlyNetText">0원</span>
                 </div>
             </div>
             
-            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-base md:text-lg font-bold shadow-lg transition transform active:scale-95 flex items-center justify-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                <span>결과 저장하기</span>
+            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl text-lg font-black shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                <span>현재 계산 결과 저장</span>
             </button>
         </div>
 
-        <!-- 메인 테이블 -->
+        <!-- 메인 시뮬레이션 테이블 -->
         <div class="table-container overflow-x-auto p-4">
-            <table id="mainTable">
+            <table id="mainTable" class="table-fixed-layout">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">No</th>
-                        <th style="width: 100px;">년도</th>
-                        <th style="width: 60px;">월</th>
-                        <th style="width: 220px;">적용 조건</th>
-                        <th>계약연봉(세전)</th>
-                        <th class="bg-emerald-50 text-emerald-700">월 수령액(세후)</th>
-                        <th>기본급(A)</th>
-                        <th>성과급(C)</th>
-                        <th>업무활동비(E)</th>
-                        <th>연장수당(F)</th>
-                        <th>기준연봉(B0)</th>
+                        <th style="width: 60px;">No</th>
+                        <th style="width: 110px;">년도</th>
+                        <th style="width: 70px;">월</th>
+                        <th style="width: 240px;">적용 조건</th>
+                        <th style="width: 160px;">계약연봉(세전)</th>
+                        <th style="width: 180px;" class="bg-emerald-50 text-emerald-700">월 수령액(세후)</th>
+                        <th style="width: 150px;">기본급(A)</th>
+                        <th style="width: 140px;">성과급(C)</th>
+                        <th style="width: 140px;">업무활동비(E)</th>
+                        <th style="width: 140px;">연장수당(F)</th>
+                        <th style="width: 150px;">기준연봉(B0)</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -207,26 +216,33 @@
         </div>
     </div>
 
-    <!-- 과거 이력 아카이브 모달 -->
+    <!-- 과거 이력 보관함 모달 -->
     <div id="historyModal" class="hidden fixed inset-0 bg-slate-900/80 z-50 flex justify-center items-center p-4">
-        <div class="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden">
-            <div class="px-6 py-4 md:px-8 md:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h2 class="text-lg md:text-xl font-black text-slate-800">📋 과거 연봉 이력 전체</h2>
-                <button onclick="toggleHistoryModal()" class="text-slate-300 hover:text-slate-600 font-bold text-3xl leading-none transition-colors">&times;</button>
+        <div class="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl max-h-[88vh] flex flex-col overflow-hidden border border-slate-200">
+            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="text-xl font-black text-slate-800">📋 SALARY HISTORY ARCHIVE (2005-2025)</h2>
+                <button onclick="toggleHistoryModal()" class="text-slate-300 hover:text-slate-600 font-bold text-4xl leading-none">&times;</button>
             </div>
-            <div class="p-0 overflow-auto flex-1">
-                <table class="modal-table w-full m-0">
+            <div class="p-0 overflow-auto flex-1 bg-slate-50">
+                <table class="modal-table w-full m-0 table-fixed-layout" style="min-width: 1000px;">
                     <thead class="sticky top-0 z-10 shadow-sm">
                         <tr>
-                            <th>No</th><th style="width:100px;">년도</th><th>나이</th><th>직급</th><th>회사</th><th>연봉(세전)</th><th class="bg-emerald-50 text-emerald-700">월 수령액</th><th>인상폭</th>
+                            <th style="width: 60px;">No</th>
+                            <th style="width: 110px;">년도</th>
+                            <th style="width: 80px;">나이</th>
+                            <th style="width: 100px;">직급</th>
+                            <th style="width: 180px;">회사</th>
+                            <th style="width: 180px;">연봉(세전)</th>
+                            <th style="width: 180px;" class="bg-emerald-50 text-emerald-700">월 수령액</th>
+                            <th style="width: 150px;">인상폭</th>
                         </tr>
                     </thead>
                     <tbody id="modalStaticBody"></tbody>
                     <tbody id="modalDynamicBody"></tbody>
                 </table>
             </div>
-            <div class="p-4 border-t border-slate-100 text-right bg-white">
-                <button onclick="toggleHistoryModal()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition text-sm">창 닫기</button>
+            <div class="p-6 border-t border-slate-100 text-right bg-white">
+                <button onclick="toggleHistoryModal()" class="bg-slate-800 text-white px-10 py-3 rounded-xl font-bold shadow-lg hover:bg-slate-700 transition">데이터 창 닫기</button>
             </div>
         </div>
     </div>
@@ -270,9 +286,7 @@
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 overlay.style.display = 'none';
-                console.error("Auth Error:", error.code);
-                if(error.code === 'auth/popup-closed-by-user') errorMsg.innerText = "로그인창이 닫혔습니다.";
-                else if(error.code === 'auth/unauthorized-domain') errorMsg.innerText = "승인되지 않은 도메인입니다.";
+                if(error.code === 'auth/unauthorized-domain') errorMsg.innerText = "승인되지 않은 도메인입니다.";
                 else errorMsg.innerText = "인증 중 오류가 발생했습니다.";
             }
         };
@@ -281,9 +295,9 @@
 
         window.updateSyncLabel = (text, type = 'success') => {
             syncStatus.textContent = text;
-            if(type === 'loading') syncStatus.className = 'text-[9px] md:text-[10px] bg-amber-500 text-white px-2 md:px-3 py-0.5 rounded-full font-black';
-            else if(type === 'error') syncStatus.className = 'text-[9px] md:text-[10px] bg-red-500 text-white px-2 md:px-3 py-0.5 rounded-full font-black';
-            else syncStatus.className = 'text-[9px] md:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 md:px-3 py-0.5 rounded-full font-black';
+            if(type === 'loading') syncStatus.className = 'text-[9px] bg-amber-500 text-white px-3 py-0.5 rounded-full font-black';
+            else if(type === 'error') syncStatus.className = 'text-[9px] bg-red-500 text-white px-3 py-0.5 rounded-full font-black';
+            else syncStatus.className = 'text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 rounded-full font-black';
         };
 
         window.saveDataToCloud = async function() {
@@ -295,7 +309,7 @@
                     updatedAt: new Date().toISOString()
                 });
                 window.updateSyncLabel('CLOUD SYNCED');
-            } catch (error) { console.error(error); window.updateSyncLabel('SYNC ERROR', 'error'); }
+            } catch (error) { window.updateSyncLabel('SYNC ERROR', 'error'); }
         };
 
         onAuthStateChanged(auth, (user) => {
@@ -309,9 +323,8 @@
                 const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'salaryData', 'history');
                 if (unsubscribeSnap) unsubscribeSnap();
                 unsubscribeSnap = onSnapshot(docRef, (snap) => {
-                    if (snap.exists() && snap.data().records) {
-                        window.historyRecords = snap.data().records;
-                    } else {
+                    if (snap.exists()) window.historyRecords = snap.data().records;
+                    else {
                         window.historyRecords = [{ year: 2025, month: 12, conditions: "기본값", a: 61898900, c: 0, e: 1200000, f: 23548900, b0: 85000000, total: 86647800 }];
                         window.saveDataToCloud();
                     }
@@ -328,7 +341,7 @@
         });
     </script>
 
-    <!-- UI Logic -->
+    <!-- UI Interaction Logic -->
     <script>
         const staticHistoryData = [
             { year: "2005", age: 26, pos: '사원', comp: '버추얼넷', salary: 15000000, inc: 0 },
@@ -403,15 +416,15 @@
             body.innerHTML = '';
             window.historyRecords.forEach((r, i) => {
                 const tr = document.createElement('tr');
-                tr.className = 'bg-history hover:bg-slate-50 transition-colors';
-                tr.innerHTML = `<td>${i+1}</td><td>${r.year}</td><td>${r.month||12}</td><td class="text-slate-500 font-bold">${r.conditions}</td><td class="font-black text-slate-800">${formatCurrency(r.total)}</td><td class="font-black text-emerald-600">${formatCurrency(getMonthlyNet(r.total))}</td><td>${formatCurrency(r.a)}</td><td>${formatCurrency(r.c)}</td><td>${formatCurrency(r.e)}</td><td>${formatCurrency(r.f)}</td><td>${formatCurrency(r.b0)}</td>`;
+                tr.className = 'bg-history hover:bg-slate-50 transition-colors num-font';
+                tr.innerHTML = `<td class="text-center">${i+1}</td><td class="text-center">${r.year}</td><td class="text-center">${r.month||12}</td><td class="text-center font-bold" style="color: #64748b;">${r.conditions}</td><td class="text-right font-bold text-slate-700">${formatCurrency(r.total)}</td><td class="text-right font-bold text-emerald-600 bg-emerald-50/30">${formatCurrency(getMonthlyNet(r.total))}</td><td class="text-right">${formatCurrency(r.a)}</td><td class="text-right">${formatCurrency(r.c)}</td><td class="text-right">${formatCurrency(r.e)}</td><td class="text-right">${formatCurrency(r.f)}</td><td class="text-right">${formatCurrency(r.b0)}</td>`;
                 body.appendChild(tr);
             });
             if(window.currentPreview){
                 const p = window.currentPreview;
                 const tr = document.createElement('tr');
-                tr.className = 'bg-highlight border-blue-200';
-                tr.innerHTML = `<td>${window.historyRecords.length+1}</td><td>${p.year} (예상)</td><td>${p.month}</td><td class="text-blue-600 font-bold">${p.conditions}</td><td class="font-bold text-blue-700">${formatCurrency(p.total)}</td><td class="font-bold text-emerald-600">${formatCurrency(getMonthlyNet(p.total))}</td><td>${formatCurrency(p.a)}</td><td>${formatCurrency(p.c)}</td><td>${formatCurrency(p.e)}</td><td>${formatCurrency(p.f)}</td><td>${formatCurrency(p.b0)}</td>`;
+                tr.className = 'bg-highlight num-font';
+                tr.innerHTML = `<td class="text-center">${window.historyRecords.length+1}</td><td class="text-center">${p.year} (예상)</td><td class="text-center">${p.month}</td><td class="text-center font-bold" style="color: #0369a1;">${p.conditions}</td><td class="text-right font-bold text-blue-700">${formatCurrency(p.total)}</td><td class="text-right font-bold text-emerald-600 bg-emerald-50/50">${formatCurrency(getMonthlyNet(p.total))}</td><td class="text-right">${formatCurrency(p.a)}</td><td class="text-right">${formatCurrency(p.c)}</td><td class="text-right">${formatCurrency(p.e)}</td><td class="text-right">${formatCurrency(p.f)}</td><td class="text-right">${formatCurrency(p.b0)}</td>`;
                 body.appendChild(tr);
             }
             renderModals();
@@ -424,8 +437,8 @@
             sBody.innerHTML = '';
             staticHistoryData.forEach((d, i) => {
                 const tr = document.createElement('tr');
-                tr.className = d.color || "bg-white hover:bg-slate-50 transition";
-                tr.innerHTML = `<td>${i+1}</td><td class="font-black">${d.year}</td><td>${d.age}</td><td>${d.pos}</td><td>${d.comp}</td><td class="num-cell font-black text-slate-700">${formatCurrency(d.salary)}</td><td class="num-cell font-black text-emerald-600">${formatCurrency(getMonthlyNet(d.salary))}</td><td class="num-cell ${d.inc > 0 ? 'text-blue-600 font-black' : (d.inc < 0 ? 'text-red-500 font-black' : 'text-slate-400')}">${d.inc === 0 ? '-' : (d.inc > 0 ? '+' : '') + formatCurrency(d.inc)}</td>`;
+                tr.className = (d.color || "bg-white") + " hover:bg-slate-50 num-font";
+                tr.innerHTML = `<td class="text-center">${i+1}</td><td class="text-center font-bold">${d.year}</td><td class="text-center">${d.age}</td><td class="text-center">${d.pos}</td><td class="text-center font-bold" style="color: #475569;">${d.comp}</td><td class="text-right font-bold text-slate-700">${formatCurrency(d.salary)}</td><td class="text-right font-bold text-emerald-600 bg-emerald-50/30">${formatCurrency(getMonthlyNet(d.salary))}</td><td class="text-right font-bold ${d.inc > 0 ? 'text-blue-600' : (d.inc < 0 ? 'text-red-500' : 'text-slate-400')}">${d.inc === 0 ? '-' : (d.inc > 0 ? '+' : '') + formatCurrency(d.inc)}</td>`;
                 sBody.appendChild(tr);
             });
             dBody.innerHTML = '';
@@ -433,8 +446,8 @@
                 const r = window.historyRecords[i];
                 const prev = window.historyRecords[i-1];
                 const tr = document.createElement('tr');
-                tr.className = "bg-emerald-50/40 hover:bg-emerald-100/60 transition border-t-2 border-emerald-100";
-                tr.innerHTML = `<td class="text-xs text-emerald-600 font-black">SIM</td><td class="font-black">${r.year}.${r.month}</td><td>${46 + (r.year-2025)}</td><td>-</td><td>DB Inc</td><td class="num-cell font-black text-slate-700">${formatCurrency(r.total)}</td><td class="num-cell font-black text-emerald-600">${formatCurrency(getMonthlyNet(r.total))}</td><td class="num-cell font-black text-blue-600">+${formatCurrency(r.total-prev.total)}</td>`;
+                tr.className = "bg-emerald-50/30 hover:bg-emerald-100/30 num-font border-t border-emerald-100";
+                tr.innerHTML = `<td class="text-center text-[10px] text-emerald-600 font-bold">SIM</td><td class="text-center font-bold">${r.year}.${r.month}</td><td class="text-center">${46 + (r.year-2025)}</td><td class="text-center">-</td><td class="text-center">DB Inc</td><td class="text-right font-bold text-slate-700">${formatCurrency(r.total)}</td><td class="text-right font-bold text-emerald-600 bg-emerald-50/50">${formatCurrency(getMonthlyNet(r.total))}</td><td class="text-right font-bold text-blue-600">+${formatCurrency(r.total-prev.total)}</td>`;
                 dBody.appendChild(tr);
             }
         }
@@ -473,8 +486,7 @@
                     let opt = document.createElement('option');
                     opt.value = g;
                     let base = g==='A'?'α+5%':g==='B+'?'α+2.5%':g==='B0'?'α+1%':g==='B-'?'α-1.5%':'동결';
-                    let bonus = g==='A'?(pos==='head'?'38%':'19%'):g==='B+'?(pos==='head'?'19%':'9%'):'0%';
-                    opt.text = type === 'perf' ? `${g} (기본 ${base} / 성과 ${bonus})` : `${g} (${base})`;
+                    opt.text = `${g} (${base})`;
                     if(g==='B0') opt.selected = true;
                     el.appendChild(opt);
                 });
