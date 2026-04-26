@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v5.2</title>
+    <title>연봉 인상 시뮬레이터 v5.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 기본 레이아웃 및 폰트 설정 */
         body { font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; }
         
-        /* 테이블 공통 스타일 */
-        .table-fixed-layout { border-collapse: collapse; width: 100%; min-width: 1250px; table-layout: fixed; }
+        /* 테이블 공통 스타일 (컬럼 추가로 최소 너비 확대) */
+        .table-fixed-layout { border-collapse: collapse; width: 100%; min-width: 1450px; table-layout: fixed; }
         .table-fixed-layout th, .table-fixed-layout td { 
             border: 1px solid #e2e8f0; 
-            padding: 12px 10px; 
+            padding: 12px 8px; 
             font-size: 0.85rem; 
             letter-spacing: -0.02em;
             overflow: hidden;
@@ -60,7 +60,7 @@
             .header-content { padding: 0.75rem 1rem !important; }
             .input-section { padding: 1rem 1rem !important; }
             
-            /* 결과 배너 최적화: 숫자가 절대 잘리지 않도록 세로 정렬 */
+            /* 결과 배너 최적화 */
             .result-banner { padding: 1.5rem 1rem !important; flex-direction: column !important; gap: 1rem !important; }
             .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
             .result-item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -70,8 +70,8 @@
             
             /* 모바일 표 스크롤 영역 */
             .table-container { padding: 0.5rem !important; }
-            .table-fixed-layout { min-width: 1100px; }
-            .table-fixed-layout th, .table-fixed-layout td { padding: 10px 6px; font-size: 0.75rem; }
+            .table-fixed-layout { min-width: 1200px; }
+            .table-fixed-layout th, .table-fixed-layout td { padding: 10px 4px; font-size: 0.75rem; }
         }
 
         .fade-in { animation: fadeIn 0.4s ease-out; }
@@ -115,12 +115,12 @@
     </div>
 
     <!-- 메인 대시보드 -->
-    <div id="mainAppSection" class="hidden main-container max-w-[1700px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 fade-in">
+    <div id="mainAppSection" class="hidden main-container max-w-[1750px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 fade-in">
         
         <!-- 상단 헤더 -->
         <div class="header-content bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-col sm:flex-row items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.2</span></h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.3</span></h1>
                 <div class="flex items-center gap-2">
                     <span id="syncStatus" class="text-[9px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
                     <span id="userDisplay" class="text-[9px] text-slate-500 font-medium hidden sm:inline"></span>
@@ -170,7 +170,7 @@
             </div>
         </div>
 
-        <!-- 핵심 결과 배너 (한글화 및 중앙 정렬 적용) -->
+        <!-- 핵심 결과 배너 -->
         <div class="result-banner bg-blue-50 border-y border-blue-100 px-8 py-6 flex flex-col lg:flex-row justify-between items-center gap-6">
             <div class="flex flex-wrap lg:flex-nowrap gap-4 md:gap-12 text-center justify-center w-full">
                 <div class="result-item min-w-[120px]">
@@ -198,17 +198,19 @@
             <table id="mainTable" class="table-fixed-layout">
                 <thead>
                     <tr>
-                        <th style="width: 60px;">No</th>
-                        <th style="width: 110px;">년도</th>
-                        <th style="width: 70px;">월</th>
-                        <th style="width: 240px;">적용 조건</th>
-                        <th style="width: 160px;">계약연봉(세전)</th>
-                        <th style="width: 180px;" class="bg-emerald-50 text-emerald-700">월 수령액(세후)</th>
-                        <th style="width: 150px;">기본급(A)</th>
-                        <th style="width: 140px;">성과급(C)</th>
-                        <th style="width: 140px;">업무활동비(E)</th>
-                        <th style="width: 140px;">연장수당(F)</th>
-                        <th style="width: 150px;">기준연봉(B0)</th>
+                        <th style="width: 45px;">No</th>
+                        <th style="width: 90px;">년도</th>
+                        <th style="width: 50px;">월</th>
+                        <th style="width: 130px;">적용 조건</th> <!-- 너비 대폭 축소 -->
+                        <th style="width: 140px;">계약연봉(세전)</th>
+                        <th style="width: 90px;" class="text-blue-700">인상률</th> <!-- 신규 추가 -->
+                        <th style="width: 130px;">월 수령액(세전)</th> <!-- 신규 추가 -->
+                        <th style="width: 140px;" class="bg-emerald-50 text-emerald-700">월 수령액(세후)</th>
+                        <th style="width: 120px;">기본급(A)</th>
+                        <th style="width: 110px;">성과급(C)</th>
+                        <th style="width: 110px;">업무활동비(E)</th>
+                        <th style="width: 120px;">연장수당(F)</th>
+                        <th style="width: 130px;">기준연봉(B0)</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -323,8 +325,9 @@
                 const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'salaryData', 'history');
                 if (unsubscribeSnap) unsubscribeSnap();
                 unsubscribeSnap = onSnapshot(docRef, (snap) => {
-                    if (snap.exists()) window.historyRecords = snap.data().records;
-                    else {
+                    if (snap.exists() && snap.data().records) {
+                        window.historyRecords = snap.data().records;
+                    } else {
                         window.historyRecords = [{ year: 2025, month: 12, conditions: "기본값", a: 61898900, c: 0, e: 1200000, f: 23548900, b0: 85000000, total: 86647800 }];
                         window.saveDataToCloud();
                     }
@@ -388,6 +391,7 @@
             let pos = posInput.value;
             let perf = perfInput.value;
             let comp = compInput.value;
+            
             const getRate = (g, a) => {
                 if(g==='A') return a+5; if(g==='B+') return a+2.5; if(g==='B0') return a+1; if(g==='B-') return a-1.5; return 0;
             };
@@ -398,15 +402,20 @@
             let nB0 = Math.floor(last.b0 * multiplier);
             let nE = last.e;
             let bRate = 0;
+            
             if(pos==='head'){ bRate = (perf==='A'?38:(perf==='B+'?19:0)); }
             else { bRate = (perf==='A'?19:(perf==='B+'?9:0)); }
+            
             let nC = Math.floor(nA * (bRate/100));
             let nTotal = nA + nC + nE + nF;
+            
             window.currentPreview = { year: nYear, month: nMonth, conditions: `${pos==='head'?'팀장':'부원'}/${perf}/${comp}`, a: nA, c: nC, e: nE, f: nF, b0: nB0, total: nTotal };
+            
             document.getElementById('totalRateText').innerText = totalRate.toFixed(2);
             document.getElementById('bonusRateText').innerText = bRate;
             document.getElementById('increaseAmountText').innerText = (nTotal >= last.total ? "+" : "") + formatCurrency(nTotal - last.total) + "원";
             document.getElementById('monthlyNetText').innerText = formatCurrency(getMonthlyNet(nTotal)) + "원";
+            
             updateUI();
         };
 
@@ -414,17 +423,63 @@
             const body = document.getElementById('tableBody');
             if(!body) return;
             body.innerHTML = '';
+            
+            // 기존 이력 렌더링
             window.historyRecords.forEach((r, i) => {
+                const prevTotal = i > 0 ? window.historyRecords[i-1].total : r.total;
+                const incRate = i > 0 ? ((r.total - prevTotal) / prevTotal * 100).toFixed(2) : '-';
+                const incRateText = incRate !== '-' ? `${incRate > 0 ? '▲' : (incRate < 0 ? '▼' : '')} ${incRate}%` : '-';
+                const incRateColor = incRate > 0 ? 'text-blue-600' : (incRate < 0 ? 'text-red-500' : 'text-slate-400');
+                const monthlyPreTax = Math.floor(r.total / 12);
+                const monthlyPostTax = getMonthlyNet(r.total);
+
                 const tr = document.createElement('tr');
                 tr.className = 'bg-history hover:bg-slate-50 transition-colors num-font';
-                tr.innerHTML = `<td class="text-center">${i+1}</td><td class="text-center">${r.year}</td><td class="text-center">${r.month||12}</td><td class="text-center font-bold" style="color: #64748b;">${r.conditions}</td><td class="text-right font-bold text-slate-700">${formatCurrency(r.total)}</td><td class="text-right font-bold text-emerald-600 bg-emerald-50/30">${formatCurrency(getMonthlyNet(r.total))}</td><td class="text-right">${formatCurrency(r.a)}</td><td class="text-right">${formatCurrency(r.c)}</td><td class="text-right">${formatCurrency(r.e)}</td><td class="text-right">${formatCurrency(r.f)}</td><td class="text-right">${formatCurrency(r.b0)}</td>`;
+                tr.innerHTML = `
+                    <td class="text-center">${i+1}</td>
+                    <td class="text-center">${r.year}</td>
+                    <td class="text-center">${r.month||12}</td>
+                    <td class="text-center font-bold text-slate-500">${r.conditions}</td>
+                    <td class="text-right font-black text-slate-800">${formatCurrency(r.total)}</td>
+                    <td class="text-center font-bold ${incRateColor}">${incRateText}</td>
+                    <td class="text-right font-bold text-slate-500">${formatCurrency(monthlyPreTax)}</td>
+                    <td class="text-right font-black text-emerald-600 bg-emerald-50/30">${formatCurrency(monthlyPostTax)}</td>
+                    <td class="text-right">${formatCurrency(r.a)}</td>
+                    <td class="text-right">${formatCurrency(r.c)}</td>
+                    <td class="text-right">${formatCurrency(r.e)}</td>
+                    <td class="text-right">${formatCurrency(r.f)}</td>
+                    <td class="text-right">${formatCurrency(r.b0)}</td>
+                `;
                 body.appendChild(tr);
             });
+
+            // 현재 시뮬레이션(미리보기) 렌더링
             if(window.currentPreview){
                 const p = window.currentPreview;
+                const lastTotal = window.historyRecords.length > 0 ? window.historyRecords[window.historyRecords.length - 1].total : p.total;
+                const incRate = ((p.total - lastTotal) / lastTotal * 100).toFixed(2);
+                const incRateText = `${incRate > 0 ? '▲' : (incRate < 0 ? '▼' : '')} ${incRate}%`;
+                const incRateColor = incRate > 0 ? 'text-blue-600' : (incRate < 0 ? 'text-red-500' : 'text-slate-400');
+                const monthlyPreTax = Math.floor(p.total / 12);
+                const monthlyPostTax = getMonthlyNet(p.total);
+
                 const tr = document.createElement('tr');
                 tr.className = 'bg-highlight num-font';
-                tr.innerHTML = `<td class="text-center">${window.historyRecords.length+1}</td><td class="text-center">${p.year} (예상)</td><td class="text-center">${p.month}</td><td class="text-center font-bold" style="color: #0369a1;">${p.conditions}</td><td class="text-right font-bold text-blue-700">${formatCurrency(p.total)}</td><td class="text-right font-bold text-emerald-600 bg-emerald-50/50">${formatCurrency(getMonthlyNet(p.total))}</td><td class="text-right">${formatCurrency(p.a)}</td><td class="text-right">${formatCurrency(p.c)}</td><td class="text-right">${formatCurrency(p.e)}</td><td class="text-right">${formatCurrency(p.f)}</td><td class="text-right">${formatCurrency(p.b0)}</td>`;
+                tr.innerHTML = `
+                    <td class="text-center">${window.historyRecords.length+1}</td>
+                    <td class="text-center">${p.year} (예상)</td>
+                    <td class="text-center">${p.month}</td>
+                    <td class="text-center font-bold" style="color: #0369a1;">${p.conditions}</td>
+                    <td class="text-right font-black text-blue-700">${formatCurrency(p.total)}</td>
+                    <td class="text-center font-bold ${incRateColor}">${incRateText}</td>
+                    <td class="text-right font-bold text-blue-500">${formatCurrency(monthlyPreTax)}</td>
+                    <td class="text-right font-black text-emerald-600 bg-emerald-50/50">${formatCurrency(monthlyPostTax)}</td>
+                    <td class="text-right">${formatCurrency(p.a)}</td>
+                    <td class="text-right">${formatCurrency(p.c)}</td>
+                    <td class="text-right">${formatCurrency(p.e)}</td>
+                    <td class="text-right">${formatCurrency(p.f)}</td>
+                    <td class="text-right">${formatCurrency(p.b0)}</td>
+                `;
                 body.appendChild(tr);
             }
             renderModals();
