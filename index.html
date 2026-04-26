@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v4.7</title>
+    <title>연봉 인상 시뮬레이터 v4.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 세로 폭 최적화: 한 화면에 들어오도록 패딩과 높이 조정 */
+        /* 기본 레이아웃: PC에서는 컴팩트하게, 모바일에서는 유연하게 */
         table { border-collapse: collapse; width: 100%; min-width: 1200px; table-layout: fixed; }
         th, td { border: 1px solid #e2e8f0; padding: 10px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; }
         th { background-color: #f8fafc; color: #475569; text-align: center; font-weight: 800; border-bottom: 2px solid #cbd5e1; }
@@ -37,13 +37,20 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 입력창 디자인 */
-        .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 800; color: #475569; }
-        select, input { height: 38px !important; font-size: 0.95rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; }
+        .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.8rem; font-weight: 800; color: #475569; }
+        select, input { height: 40px !important; font-size: 0.95rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; }
         input:focus, select:focus { border-color: #3b82f6 !important; ring: 3px; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         
+        /* 모바일용 스타일 보정 */
         @media (max-width: 768px) {
             body { padding: 0.5rem !important; }
-            .p-10, .p-8, .p-6 { padding: 1rem !important; }
+            .main-container { border-radius: 1.5rem !important; }
+            .header-content { padding: 1rem !important; }
+            .input-section { padding: 1rem !important; }
+            .result-banner { padding: 1.5rem 1rem !important; flex-direction: column !important; text-align: center !important; }
+            .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; margin-bottom: 1rem; }
+            .result-item:last-child { margin-bottom: 0; }
+            .table-container { padding: 0.5rem !important; }
             table { min-width: 1000px; }
             th, td { padding: 8px 6px; font-size: 0.8rem; }
         }
@@ -57,7 +64,7 @@
     <!-- 로딩 오버레이 -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-95 z-[100] flex flex-col justify-center items-center text-center">
         <div class="loader mb-4 shadow-sm"></div>
-        <p class="text-slate-800 font-bold text-lg" id="loadingText">보안 시스템 확인 중...</p>
+        <p class="text-slate-800 font-bold text-lg" id="loadingText">시스템 확인 중...</p>
     </div>
 
     <!-- 커스텀 확인창 (Confirm Modal) -->
@@ -73,67 +80,67 @@
 
     <!-- 구글 로그인 전용 섹션 -->
     <div id="authSection" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md text-center fade-in">
+        <div class="bg-white p-8 md:p-10 rounded-[40px] shadow-2xl w-full max-w-md text-center fade-in">
             <div class="mb-8">
-                <div class="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.92 3.32-2.12 4.4-1.2 1.2-3 2.12-5.72 2.12-4.52 0-8.16-3.64-8.16-8.16s3.64-8.16 8.16-8.16c2.48 0 4.36.96 5.68 2.2l2.32-2.32C18.6 2.44 15.76 1 12.48 1c-6.08 0-11 4.92-11 11s4.92 11 11 11c3.28 0 6.04-1.08 8.12-3.24 2.12-2.12 2.84-5.12 2.84-7.68 0-.52-.04-1.04-.12-1.52H12.48z"/></svg>
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-8 h-8 md:w-10 md:h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.92 3.32-2.12 4.4-1.2 1.2-3 2.12-5.72 2.12-4.52 0-8.16-3.64-8.16-8.16s3.64-8.16 8.16-8.16c2.48 0 4.36.96 5.68 2.2l2.32-2.32C18.6 2.44 15.76 1 12.48 1c-6.08 0-11 4.92-11 11s4.92 11 11 11c3.28 0 6.04-1.08 8.12-3.24 2.12-2.12 2.84-5.12 2.84-7.68 0-.52-.04-1.04-.12-1.52H12.48z"/></svg>
                 </div>
-                <h2 class="text-3xl font-black text-slate-800 mb-3">계정 연결</h2>
-                <p class="text-slate-500 font-medium">데이터 보호 및 동기화를 위해<br>구글 계정으로 로그인해 주세요.</p>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-800 mb-3">계정 연결</h2>
+                <p class="text-sm md:text-base text-slate-500 font-medium leading-relaxed">데이터 보호 및 동기화를 위해<br>구글 계정으로 로그인해 주세요.</p>
             </div>
-            <div id="authErrorMessage" class="text-red-500 text-[11px] font-bold mb-4 min-h-[1.5rem] leading-tight"></div>
-            <button onclick="handleGoogleLogin()" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-lg shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
+            <div id="authErrorMessage" class="text-red-500 text-[11px] font-bold mb-4 min-h-[1.5rem] leading-tight text-center"></div>
+            <button onclick="handleGoogleLogin()" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-lg shadow-xl transition transform active:scale-95">
                 구글 계정으로 시작하기
             </button>
         </div>
     </div>
 
     <!-- 메인 시뮬레이터 섹션 -->
-    <div id="mainAppSection" class="hidden max-w-[1700px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 fade-in">
+    <div id="mainAppSection" class="hidden main-container max-w-[1700px] mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 fade-in">
         
         <!-- 헤더 -->
-        <div class="bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+        <div class="header-content bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-col sm:flex-row items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.7</span></h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.8</span></h1>
                 <div class="flex items-center gap-2">
                     <span id="syncStatus" class="text-[10px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
                     <span id="userDisplay" class="text-[10px] text-slate-400 font-medium hidden sm:inline"></span>
                 </div>
             </div>
             <div class="flex flex-wrap justify-center gap-2">
-                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">📋 이력 전체보기</button>
-                <button onclick="askUndo()" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">↩ 기록 삭제</button>
-                <button onclick="askReset()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm">🔄 초기화</button>
-                <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-900 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition">로그아웃</button>
+                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold transition shadow-sm">📋 이력보기</button>
+                <button onclick="askUndo()" class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold transition shadow-sm">↩ 삭제</button>
+                <button onclick="askReset()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold transition shadow-sm">🔄 초기화</button>
+                <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-900 text-slate-300 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-xs font-bold transition">로그아웃</button>
             </div>
         </div>
 
         <!-- 입력 영역 -->
-        <div class="p-6 bg-white border-b border-slate-100">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6">
-                <div class="lg:col-span-2 input-group">
+        <div class="input-section p-6 bg-white border-b border-slate-100">
+            <div class="grid grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6">
+                <div class="col-span-1 lg:col-span-2 input-group">
                     <label>📈 물가(α)</label>
                     <div class="relative">
                         <input type="number" id="alphaInput" value="3.0" step="0.1" class="pr-8 font-bold">
                         <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-sm">%</span>
                     </div>
                 </div>
-                <div class="lg:col-span-2 input-group">
+                <div class="col-span-1 lg:col-span-2 input-group">
                     <label>👤 직책</label>
                     <select id="posInput" class="font-bold cursor-pointer">
                         <option value="member">부서원</option>
                         <option value="head">부서장</option>
                     </select>
                 </div>
-                <div class="lg:col-span-3 input-group">
+                <div class="col-span-2 lg:col-span-3 input-group">
                     <label>🎯 성과등급</label>
                     <select id="perfInput" class="font-bold cursor-pointer"></select>
                 </div>
-                <div class="lg:col-span-3 input-group">
+                <div class="col-span-2 lg:col-span-3 input-group">
                     <label>💪 역량등급</label>
                     <select id="compInput" class="font-bold cursor-pointer"></select>
                 </div>
-                <div class="lg:col-span-2 input-group">
+                <div class="col-span-2 lg:col-span-2 input-group">
                     <label>🗓️ 적용 시점</label>
                     <div class="flex items-center gap-2">
                         <input type="number" id="yearInput" class="flex-1 text-center font-bold" placeholder="년도">
@@ -144,31 +151,31 @@
             </div>
         </div>
 
-        <!-- 대시보드 배너 -->
-        <div class="bg-blue-50 border-y border-blue-100 px-8 py-6 flex flex-col lg:flex-row justify-between items-center gap-6">
-            <div class="flex flex-wrap gap-10 text-center lg:text-left justify-center lg:justify-start">
-                <div class="min-w-[120px]">
-                    <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Increase Rate</span>
+        <!-- 결과 요약 배너 -->
+        <div class="result-banner bg-blue-50 border-y border-blue-100 px-8 py-6 flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div class="flex flex-wrap lg:flex-nowrap gap-8 lg:gap-10 text-center lg:text-left justify-center lg:justify-start w-full">
+                <div class="result-item min-w-[120px]">
+                    <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Target Rate</span>
                     <span class="text-2xl font-black text-blue-700 tracking-tighter"><span id="totalRateText">4.0</span>% / <span id="bonusRateText">0</span>%</span>
                 </div>
-                <div class="border-l border-blue-200 pl-10 min-w-[160px]">
+                <div class="result-item border-l border-blue-200 pl-10 min-w-[160px]">
                     <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Annual Increase</span>
                     <span class="text-2xl font-black text-blue-700 tracking-tighter" id="increaseAmountText">+0원</span>
                 </div>
-                <div class="border-l border-blue-200 pl-10">
+                <div class="result-item border-l border-blue-200 pl-10">
                     <span class="text-emerald-700 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Monthly Net (Est.)</span>
                     <span class="text-3xl font-black text-emerald-600 tracking-tighter" id="monthlyNetText">0원</span>
                 </div>
             </div>
             
-            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl text-lg font-bold shadow-lg transition transform active:scale-95 flex items-center justify-center gap-3">
+            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg transition transform active:scale-95 flex items-center justify-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
                 <span>결과 저장하기</span>
             </button>
         </div>
 
         <!-- 메인 테이블 -->
-        <div class="overflow-x-auto p-4">
+        <div class="table-container overflow-x-auto p-4">
             <table id="mainTable">
                 <thead>
                     <tr>
@@ -193,9 +200,9 @@
     <!-- 과거 이력 아카이브 모달 -->
     <div id="historyModal" class="hidden fixed inset-0 bg-slate-900/80 z-50 flex justify-center items-center p-4">
         <div class="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden">
-            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h2 class="text-xl font-black text-slate-800">📋 과거 연봉 이력 전체</h2>
-                <button onclick="toggleHistoryModal()" class="text-slate-300 hover:text-slate-600 font-bold text-4xl leading-none transition-colors">&times;</button>
+            <div class="px-6 py-4 md:px-8 md:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h2 class="text-lg md:text-xl font-black text-slate-800">📋 과거 연봉 이력 전체</h2>
+                <button onclick="toggleHistoryModal()" class="text-slate-300 hover:text-slate-600 font-bold text-3xl leading-none transition-colors">&times;</button>
             </div>
             <div class="p-0 overflow-auto flex-1">
                 <table class="modal-table w-full m-0">
@@ -208,8 +215,8 @@
                     <tbody id="modalDynamicBody"></tbody>
                 </table>
             </div>
-            <div class="p-5 border-t border-slate-100 text-right bg-white">
-                <button onclick="toggleHistoryModal()" class="bg-slate-800 text-white px-8 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition">창 닫기</button>
+            <div class="p-4 border-t border-slate-100 text-right bg-white">
+                <button onclick="toggleHistoryModal()" class="bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition text-sm">창 닫기</button>
             </div>
         </div>
     </div>
@@ -255,8 +262,8 @@
                 overlay.style.display = 'none';
                 console.error("Auth Error:", error.code);
                 if(error.code === 'auth/popup-closed-by-user') errorMsg.innerText = "로그인창이 닫혔습니다.";
-                else if(error.code === 'auth/unauthorized-domain') errorMsg.innerText = "승인되지 않은 도메인입니다. Firebase 설정을 확인하세요.";
-                else errorMsg.innerText = "인증 오류가 발생했습니다.";
+                else if(error.code === 'auth/unauthorized-domain') errorMsg.innerText = "승인되지 않은 도메인입니다.";
+                else errorMsg.innerText = "인증 중 오류가 발생했습니다.";
             }
         };
 
