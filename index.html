@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v4.6</title>
+    <title>연봉 인상 시뮬레이터 v4.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 세로 폭 최적화: 한 화면에 들어오도록 패딩과 높이 조정 */
@@ -13,7 +13,6 @@
         
         /* 데이터 정렬 규칙: 금액은 우측, 텍스트는 중앙 */
         #tableBody td { text-align: right; color: #1e293b; font-weight: 600; }
-        /* No, 년도, 월, 조건 컬럼은 가운데 정렬 */
         #tableBody td:nth-child(1), #tableBody td:nth-child(2), #tableBody td:nth-child(3), #tableBody td:nth-child(4) { 
             text-align: center; font-weight: 500; 
         }
@@ -37,7 +36,7 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 입력창 디자인: 세로폭을 줄이면서도 사용성 유지 */
+        /* 입력창 디자인 */
         .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 800; color: #475569; }
         select, input { height: 38px !important; font-size: 0.95rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; }
         input:focus, select:focus { border-color: #3b82f6 !important; ring: 3px; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
@@ -86,9 +85,6 @@
             <button onclick="handleGoogleLogin()" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-lg shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
                 구글 계정으로 시작하기
             </button>
-            <p class="mt-8 text-[11px] text-slate-400 font-medium leading-relaxed">
-                개인 연봉 정보는 구글 클라우드에 암호화되어 저장되며,<br>원재님 본인만 열람할 수 있습니다.
-            </p>
         </div>
     </div>
 
@@ -98,9 +94,9 @@
         <!-- 헤더 -->
         <div class="bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-col sm:flex-row items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.6</span></h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.7</span></h1>
                 <div class="flex items-center gap-2">
-                    <span id="syncStatus" class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 rounded-full font-black">CLOUD SYNC</span>
+                    <span id="syncStatus" class="text-[10px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
                     <span id="userDisplay" class="text-[10px] text-slate-400 font-medium hidden sm:inline"></span>
                 </div>
             </div>
@@ -181,7 +177,7 @@
                         <th style="width: 60px;">월</th>
                         <th style="width: 220px;">적용 조건</th>
                         <th>계약연봉(세전)</th>
-                        <th class="bg-emerald-50 text-emerald-700">월 실수령액(세후)</th>
+                        <th class="bg-emerald-50 text-emerald-700">월 수령액(세후)</th>
                         <th>기본급(A)</th>
                         <th>성과급(C)</th>
                         <th>업무활동비(E)</th>
@@ -224,7 +220,6 @@
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase 개인 설정 정보
         const firebaseConfig = {
             apiKey: "AIzaSyCzis9LmUk7dPEIfEjkdYgAC4NE5H3m3qE",
             authDomain: "my-ai-project-caccd.firebaseapp.com",
@@ -251,7 +246,6 @@
         const errorMsg = document.getElementById('authErrorMessage');
         const syncStatus = document.getElementById('syncStatus');
 
-        // Google Login Handler
         window.handleGoogleLogin = async () => {
             try {
                 overlay.style.display = 'flex';
@@ -259,34 +253,32 @@
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 overlay.style.display = 'none';
-                console.error("Auth Error:", error.code, error.message);
-                
-                if (error.code === 'auth/popup-closed-by-user') {
-                    errorMsg.innerText = "로그인창이 닫혔습니다. 다시 시도해 주세요.";
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    errorMsg.innerText = "Firebase 콘솔에서 Google 로그인을 활성화해야 합니다.";
-                } else if (error.code === 'auth/unauthorized-domain') {
-                    errorMsg.innerText = "이 도메인은 승인되지 않았습니다. Firebase 콘솔에서 도메인을 추가하세요.";
-                } else {
-                    errorMsg.innerText = `오류: ${error.code}\nFirebase 설정을 확인해주세요.`;
-                }
+                console.error("Auth Error:", error.code);
+                if(error.code === 'auth/popup-closed-by-user') errorMsg.innerText = "로그인창이 닫혔습니다.";
+                else if(error.code === 'auth/unauthorized-domain') errorMsg.innerText = "승인되지 않은 도메인입니다. Firebase 설정을 확인하세요.";
+                else errorMsg.innerText = "인증 오류가 발생했습니다.";
             }
         };
 
         window.handleLogout = () => signOut(auth);
 
+        window.updateSyncLabel = (text, type = 'success') => {
+            syncStatus.textContent = text;
+            if(type === 'loading') syncStatus.className = 'text-[10px] bg-amber-500 text-white px-3 py-0.5 rounded-full font-black';
+            else if(type === 'error') syncStatus.className = 'text-[10px] bg-red-500 text-white px-3 py-0.5 rounded-full font-black';
+            else syncStatus.className = 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 rounded-full font-black';
+        };
+
         window.saveDataToCloud = async function() {
             if (!currentUser) return;
             try {
-                syncStatus.textContent = 'SAVING...';
-                syncStatus.className = 'text-[10px] bg-amber-500 text-white px-3 py-0.5 rounded-full font-black';
+                window.updateSyncLabel('SAVING...', 'loading');
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'salaryData', 'history'), {
                     records: window.historyRecords,
                     updatedAt: new Date().toISOString()
                 });
-                syncStatus.textContent = 'CLOUD SYNCED';
-                syncStatus.className = 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 rounded-full font-black';
-            } catch (error) { console.error(error); }
+                window.updateSyncLabel('CLOUD SYNCED');
+            } catch (error) { console.error(error); window.updateSyncLabel('SYNC ERROR', 'error'); }
         };
 
         onAuthStateChanged(auth, (user) => {
@@ -295,7 +287,7 @@
                 currentUser = user;
                 authSection.classList.add('hidden');
                 mainAppSection.classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = user.displayName || user.email;
+                document.getElementById('userDisplay').innerText = user.email;
                 
                 const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'salaryData', 'history');
                 if (unsubscribeSnap) unsubscribeSnap();
@@ -303,14 +295,12 @@
                     if (snap.exists() && snap.data().records) {
                         window.historyRecords = snap.data().records;
                     } else {
-                        // 초기 데이터 세팅
                         window.historyRecords = [{ year: 2025, month: 12, conditions: "기본값", a: 61898900, c: 0, e: 1200000, f: 23548900, b0: 85000000, total: 86647800 }];
                         window.saveDataToCloud();
                     }
+                    window.updateSyncLabel('CLOUD SYNCED');
                     document.getElementById('yearInput').value = window.historyRecords[window.historyRecords.length - 1].year + 1;
                     window.updateSimulation();
-                }, (error) => {
-                    console.error("Firestore error:", error);
                 });
             } else {
                 currentUser = null;
@@ -321,7 +311,7 @@
         });
     </script>
 
-    <!-- UI Interaction Logic -->
+    <!-- UI Logic -->
     <script>
         const staticHistoryData = [
             { year: "2005", age: 26, pos: '사원', comp: '버추얼넷', salary: 15000000, inc: 0 },
