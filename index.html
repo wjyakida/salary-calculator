@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v5.3</title>
+    <title>연봉 인상 시뮬레이터 v5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 기본 레이아웃 및 폰트 설정 */
@@ -53,12 +53,19 @@
         select, input { height: 42px !important; font-size: 1rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; text-align: center; }
         input:focus, select:focus { border-color: #3b82f6 !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         
-        /* 모바일 대응 (반응형 정렬) */
+        /* 모바일 대응 (반응형 정렬 및 폼 최적화) */
         @media (max-width: 768px) {
             body { padding: 0.5rem !important; }
             .main-container { border-radius: 1.25rem !important; }
             .header-content { padding: 0.75rem 1rem !important; }
             .input-section { padding: 1rem 1rem !important; }
+            
+            /* [모바일 전용] 입력창 높이 및 크기 축소 */
+            select, input { height: 36px !important; font-size: 0.85rem !important; border-radius: 8px !important; }
+            .input-group label { font-size: 0.75rem; margin-bottom: 4px; }
+            
+            /* [모바일 전용] 드롭다운(select) 텍스트 강제 중앙 정렬 */
+            select { text-align-last: center; padding-right: 0 !important; }
             
             /* 결과 배너 최적화 */
             .result-banner { padding: 1.5rem 1rem !important; flex-direction: column !important; gap: 1rem !important; }
@@ -120,7 +127,7 @@
         <!-- 상단 헤더 -->
         <div class="header-content bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-col sm:flex-row items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.3</span></h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.4</span></h1>
                 <div class="flex items-center gap-2">
                     <span id="syncStatus" class="text-[9px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
                     <span id="userDisplay" class="text-[9px] text-slate-500 font-medium hidden sm:inline"></span>
@@ -141,7 +148,7 @@
                     <label>📈 물가(α)</label>
                     <div class="relative">
                         <input type="number" id="alphaInput" value="3.0" step="0.1" class="font-bold num-font pr-6">
-                        <span class="absolute right-3 top-2.5 text-slate-400 font-bold text-sm">%</span>
+                        <span class="absolute right-3 top-2.5 md:top-3 text-slate-400 font-bold text-sm">%</span>
                     </div>
                 </div>
                 <div class="col-span-1 lg:col-span-2 input-group">
@@ -151,20 +158,22 @@
                         <option value="head">부서장</option>
                     </select>
                 </div>
-                <div class="col-span-2 lg:col-span-3 input-group">
+                <!-- 모바일에서 성과등급과 역량등급이 한 줄에 표시되도록 col-span-1 로 수정 (PC는 lg:col-span-3 유지) -->
+                <div class="col-span-1 lg:col-span-3 input-group">
                     <label>🎯 성과등급</label>
                     <select id="perfInput" class="font-bold cursor-pointer text-center"></select>
                 </div>
-                <div class="col-span-2 lg:col-span-3 input-group">
+                <div class="col-span-1 lg:col-span-3 input-group">
                     <label>💪 역량등급</label>
                     <select id="compInput" class="font-bold cursor-pointer text-center"></select>
                 </div>
                 <div class="col-span-2 lg:col-span-2 input-group">
                     <label>🗓️ 적용 년·월</label>
-                    <div class="flex items-center gap-1.5">
-                        <input type="number" id="yearInput" class="flex-1 text-center font-bold num-font" placeholder="년도">
+                    <!-- 년과 월의 비율을 모바일에서 flex 속성으로 자연스럽게 분배 (대략 3:2 비율) -->
+                    <div class="flex items-center gap-1.5 w-full">
+                        <input type="number" id="yearInput" class="flex-[3] md:flex-1 text-center font-bold num-font" placeholder="년도">
                         <span class="font-bold text-slate-300">.</span>
-                        <input type="number" id="monthInput" value="12" min="1" max="12" class="w-16 text-center font-bold num-font">
+                        <input type="number" id="monthInput" value="12" min="1" max="12" class="flex-[2] md:flex-none md:w-16 text-center font-bold num-font">
                     </div>
                 </div>
             </div>
@@ -201,10 +210,10 @@
                         <th style="width: 45px;">No</th>
                         <th style="width: 90px;">년도</th>
                         <th style="width: 50px;">월</th>
-                        <th style="width: 130px;">적용 조건</th> <!-- 너비 대폭 축소 -->
+                        <th style="width: 130px;">적용 조건</th>
                         <th style="width: 140px;">계약연봉(세전)</th>
-                        <th style="width: 90px;" class="text-blue-700">인상률</th> <!-- 신규 추가 -->
-                        <th style="width: 130px;">월 수령액(세전)</th> <!-- 신규 추가 -->
+                        <th style="width: 90px;" class="text-blue-700">인상률</th>
+                        <th style="width: 130px;">월 수령액(세전)</th>
                         <th style="width: 140px;" class="bg-emerald-50 text-emerald-700">월 수령액(세후)</th>
                         <th style="width: 120px;">기본급(A)</th>
                         <th style="width: 110px;">성과급(C)</th>
