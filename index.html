@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v5.5</title>
+    <title>연봉 인상 시뮬레이터 v5.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 기본 레이아웃 및 폰트 설정 */
         body { font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; }
         
-        /* 테이블 공통 스타일 (컬럼 추가로 최소 너비 확대) */
+        /* 테이블 공통 스타일 */
         .table-fixed-layout { border-collapse: collapse; width: 100%; min-width: 1450px; table-layout: fixed; }
         .table-fixed-layout th, .table-fixed-layout td { 
             border: 1px solid #e2e8f0; 
@@ -52,6 +52,7 @@
         .input-group label { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; font-size: 0.85rem; font-weight: 800; color: #475569; white-space: nowrap;}
         select, input { height: 42px !important; font-size: 1rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; text-align: center; }
         input:focus, select:focus { border-color: #3b82f6 !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        input::placeholder { color: #94a3b8; font-size: 0.85rem; }
         
         /* 모바일 대응 (반응형 정렬 및 폼 최적화) */
         @media (max-width: 768px) {
@@ -66,6 +67,14 @@
             
             /* [모바일 전용] 드롭다운(select) 텍스트 강제 중앙 정렬 */
             select { text-align-last: center; padding-right: 0 !important; }
+            
+            /* 결과 배너 최적화 */
+            .result-banner { padding: 1.5rem 1rem !important; flex-direction: column !important; gap: 1rem !important; }
+            .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
+            .result-item:last-child { border-bottom: none; padding-bottom: 0; }
+            
+            .val-large { font-size: 1.4rem !important; line-height: 1.2; }
+            .val-xlarge { font-size: 1.75rem !important; line-height: 1.1; }
             
             /* 모바일 표 스크롤 영역 */
             .table-container { padding: 0.5rem !important; }
@@ -119,7 +128,7 @@
         <!-- 상단 헤더 -->
         <div class="header-content bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex flex-col sm:flex-row items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.5</span></h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight">연봉 시뮬레이터 <span class="text-blue-400">v5.6</span></h1>
                 <div class="flex items-center gap-2">
                     <span id="syncStatus" class="text-[9px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
                     <span id="userDisplay" class="text-[9px] text-slate-500 font-medium hidden sm:inline"></span>
@@ -133,9 +142,9 @@
             </div>
         </div>
 
-        <!-- 시뮬레이션 입력 영역 -->
+        <!-- 시뮬레이션 입력 영역 (6개 항목, 각 2칸씩 12칸 그리드) -->
         <div class="input-section p-6 bg-white border-b border-slate-100">
-            <div class="grid grid-cols-2 lg:grid-cols-12 gap-4 md:gap-8">
+            <div class="grid grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
                 <div class="col-span-1 lg:col-span-2 input-group">
                     <label>📈 물가(α)</label>
                     <div class="relative">
@@ -150,27 +159,31 @@
                         <option value="head">부서장</option>
                     </select>
                 </div>
-                <div class="col-span-1 lg:col-span-3 input-group">
+                <div class="col-span-1 lg:col-span-2 input-group">
                     <label>🎯 성과등급</label>
                     <select id="perfInput" class="font-bold cursor-pointer text-center"></select>
                 </div>
-                <div class="col-span-1 lg:col-span-3 input-group">
+                <div class="col-span-1 lg:col-span-2 input-group">
                     <label>💪 역량등급</label>
                     <select id="compInput" class="font-bold cursor-pointer text-center"></select>
                 </div>
-                <div class="col-span-2 lg:col-span-2 input-group">
+                <div class="col-span-1 lg:col-span-2 input-group">
                     <label>🗓️ 적용 년·월</label>
-                    <!-- 년과 월의 비율을 모바일에서 flex 속성으로 분배 (3:2 비율) -->
                     <div class="flex items-center gap-1.5 w-full">
-                        <input type="number" id="yearInput" class="flex-[3] md:flex-1 text-center font-bold num-font" placeholder="년도">
+                        <input type="number" id="yearInput" class="flex-1 text-center font-bold num-font" placeholder="년도">
                         <span class="font-bold text-slate-300">.</span>
-                        <input type="number" id="monthInput" value="12" min="1" max="12" class="flex-[2] md:flex-none md:w-16 text-center font-bold num-font">
+                        <input type="number" id="monthInput" value="12" min="1" max="12" class="w-14 md:w-16 text-center font-bold num-font">
                     </div>
+                </div>
+                <!-- 수동 계약연봉 입력 (신규) -->
+                <div class="col-span-1 lg:col-span-2 input-group">
+                    <label>💰 연봉 직접입력</label>
+                    <input type="number" id="manualTotalInput" placeholder="빈칸=자동계산" class="font-bold text-center num-font text-blue-600 bg-blue-50/30">
                 </div>
             </div>
         </div>
 
-        <!-- 핵심 결과 배너 (모바일 그리드 최적화) -->
+        <!-- 핵심 결과 배너 -->
         <div class="bg-blue-50 border-y border-blue-100 px-4 md:px-8 py-5 flex flex-col lg:flex-row justify-between items-center gap-6">
             <div class="grid grid-cols-2 lg:flex lg:flex-nowrap gap-y-4 gap-x-2 md:gap-12 text-center justify-center w-full">
                 <!-- 모바일 1행 1열: 목표 인상률 -->
@@ -204,7 +217,7 @@
                         <th style="width: 45px;">No</th>
                         <th style="width: 90px;">년도</th>
                         <th style="width: 50px;">월</th>
-                        <th style="width: 130px;">적용 조건</th>
+                        <th style="width: 140px;">적용 조건</th>
                         <th style="width: 140px;">계약연봉(세전)</th>
                         <th style="width: 90px;" class="text-blue-700">인상률</th>
                         <th style="width: 130px;">월 수령액(세전)</th>
@@ -381,6 +394,7 @@
         const compInput = document.getElementById('compInput');
         const yearInput = document.getElementById('yearInput');
         const monthInput = document.getElementById('monthInput');
+        const manualTotalInput = document.getElementById('manualTotalInput');
         
         const formatCurrency = (num) => num ? num.toLocaleString('ko-KR') : '0';
         const getMonthlyNet = (annual) => Math.floor((annual / 12) * 0.8302);
@@ -388,6 +402,7 @@
         window.updateSimulation = function() {
             if (!window.historyRecords || window.historyRecords.length === 0) return;
             const last = window.historyRecords[window.historyRecords.length - 1];
+            
             let nYear = parseInt(yearInput.value) || (last.year + 1);
             let nMonth = parseInt(monthInput.value) || 12;
             let alpha = parseFloat(alphaInput.value) || 0;
@@ -395,25 +410,60 @@
             let perf = perfInput.value;
             let comp = compInput.value;
             
+            // 수동 입력 확인
+            let isManual = manualTotalInput.value !== "" && parseInt(manualTotalInput.value) > 0;
+            
+            // 1. 자동 계산 로직 (기본)
             const getRate = (g, a) => {
                 if(g==='A') return a+5; if(g==='B+') return a+2.5; if(g==='B0') return a+1; if(g==='B-') return a-1.5; return 0;
             };
             let totalRate = (getRate(perf, alpha) * 0.5) + (getRate(comp, alpha) * 0.5);
             let multiplier = 1 + (totalRate / 100);
+            
             let nA = Math.floor(last.a * multiplier);
             let nF = Math.floor(last.f * multiplier);
             let nB0 = Math.floor(last.b0 * multiplier);
             let nE = last.e;
-            let bRate = 0;
             
-            if(pos==='head'){ bRate = (perf==='A'?38:(perf==='B+'?19:0)); }
-            else { bRate = (perf==='A'?19:(perf==='B+'?9:0)); }
-            
+            let bRate = (pos==='head') ? (perf==='A'?38:(perf==='B+'?19:0)) : (perf==='A'?19:(perf==='B+'?9:0));
             let nC = Math.floor(nA * (bRate/100));
+            
             let nTotal = nA + nC + nE + nF;
             
-            window.currentPreview = { year: nYear, month: nMonth, conditions: `${pos==='head'?'팀장':'부원'}/${perf}/${comp}`, a: nA, c: nC, e: nE, f: nF, b0: nB0, total: nTotal };
+            // 2. 수동 입력 시 덮어쓰기 및 역산 로직
+            if (isManual) {
+                let manualTotal = parseInt(manualTotalInput.value);
+                nTotal = manualTotal;
+                
+                // 실제 인상률 역산
+                totalRate = ((nTotal - last.total) / last.total) * 100;
+                bRate = '-'; // 수동 시 보너스 비율은 정확히 추정 불가
+                
+                // 세부 항목(A, C, F)은 전년도 비율에 맞춰 대략 분배 (E는 고정)
+                let oldVarSum = last.a + last.c + last.f;
+                let newVarSum = nTotal - nE;
+                
+                if(oldVarSum > 0 && newVarSum > 0) {
+                    nA = Math.floor(last.a * (newVarSum / oldVarSum));
+                    nC = Math.floor(last.c * (newVarSum / oldVarSum));
+                    nF = Math.floor(last.f * (newVarSum / oldVarSum));
+                    // 오차 보정
+                    nA += nTotal - (nA + nC + nE + nF);
+                } else {
+                    nA = nTotal - nE;
+                    nC = 0;
+                    nF = 0;
+                }
+                // 기준연봉(B0)도 단순 비율 상승 적용
+                nB0 = Math.floor(last.b0 * (nTotal / last.total));
+            }
             
+            let conditionText = `${pos==='head'?'팀장':'부원'}/${perf}/${comp}`;
+            if (isManual) conditionText += ` <span class="text-blue-500 font-black">(수동)</span>`;
+            
+            window.currentPreview = { year: nYear, month: nMonth, conditions: conditionText, a: nA, c: nC, e: nE, f: nF, b0: nB0, total: nTotal };
+            
+            // 결과 배너 텍스트 업데이트
             document.getElementById('totalRateText').innerText = totalRate.toFixed(2);
             document.getElementById('bonusRateText').innerText = bRate;
             document.getElementById('increaseAmountText').innerText = (nTotal >= last.total ? "+" : "") + formatCurrency(nTotal - last.total) + "원";
@@ -555,6 +605,8 @@
 
         window.addRecord = function() {
             if (window.currentPreview) {
+                // 수동 입력값을 지워 다음엔 다시 자동계산 모드가 되도록 편의성 제공
+                manualTotalInput.value = ""; 
                 window.historyRecords.push(window.currentPreview);
                 window.saveDataToCloud();
                 yearInput.value = parseInt(window.currentPreview.year) + 1;
@@ -563,7 +615,7 @@
         };
 
         window.toggleHistoryModal = () => document.getElementById('historyModal').classList.toggle('hidden');
-        [alphaInput, posInput, perfInput, compInput, yearInput, monthInput].forEach(el => el.addEventListener('input', window.updateSimulation));
+        [alphaInput, posInput, perfInput, compInput, yearInput, monthInput, manualTotalInput].forEach(el => el.addEventListener('input', window.updateSimulation));
         posInput.addEventListener('change', () => { updatePerfLabels(); window.updateSimulation(); });
         updatePerfLabels();
     </script>
