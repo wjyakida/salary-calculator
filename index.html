@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연봉 인상 누적 시뮬레이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        table { border-collapse: collapse; width: 100%; min-width: 1400px; }
+        /* 줄바꿈 방지(white-space: nowrap) 및 폰트 크기/여백 최적화 */
+        th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: right; white-space: nowrap; font-size: 0.9rem; }
+        th { background-color: #6ea8df; color: white; text-align: center; font-weight: bold; font-size: 0.9rem; }
+        td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4) { text-align: center; }
+        .bg-highlight { background-color: #f0f9ff; font-weight: bold; color: #0284c7; }
+        .bg-history { background-color: #ffffff; color: #334155; }
+        
+        /* 모달용 테이블 스타일 추가 */
+        .modal-table { min-width: 900px; border: 0; }
+        .modal-table th { background-color: #475569; color: white; border: 1px solid #334155; padding: 10px 8px; white-space: nowrap; font-size: 0.9rem; }
+        .modal-table td { text-align: center; border: 1px solid #cbd5e1; padding: 8px 10px; white-space: nowrap; font-size: 0.9rem; }
+        .modal-table td.text-right { text-align: right; padding-right: 16px; }
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-slate-800 text-white p-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">내년도 연봉 인상 누적 시뮬레이터</h1>
+                <p class="text-sm mt-2 text-slate-300">매년 누적된 기본급을 바탕으로 다음 해 연봉을 계산합니다.</p>
+            </div>
+            <div class="mt-4 md:mt-0 space-x-2 flex">
+                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded text-sm font-bold transition shadow-md">📋 과거 연봉 이력 보기</button>
+                <button onclick="undoLast()" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded text-sm font-bold transition shadow-md">↩ 최근 기록 삭제</button>
+                <button onclick="resetHistory()" class="bg-red-500 hover:bg-red-400 text-white px-4 py-2 rounded text-sm font-bold transition shadow-md">🔄 전체 초기화</button>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="p-6 bg-slate-100 border-b border-slate-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4">
+            
+            <!-- Alpha Input -->
+            <div class="flex flex-col gap-2 lg:col-span-1">
+                <label for="alphaInput" class="font-bold text-slate-700 whitespace-nowrap">📈 물가인상분(α)</label>
+                <div class="flex items-center">
+                    <input type="number" id="alphaInput" value="3.0" step="0.1" 
+                           class="w-full px-3 py-2 text-base md:text-lg font-bold border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <span class="ml-2 font-bold text-slate-600">%</span>
+                </div>
+            </div>
+
+            <!-- Position Select -->
+            <div class="flex flex-col gap-2 lg:col-span-1">
+                <label for="posInput" class="font-bold text-slate-700 whitespace-nowrap">👤 직책 구분</label>
+                <select id="posInput" class="w-full px-3 py-2 text-base md:text-lg font-bold border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <option value="member" selected>부서원</option>
+                    <option value="head">부서장</option>
+                </select>
+            </div>
+
+            <!-- Performance Grade Select -->
+            <div class="flex flex-col gap-2 lg:col-span-2">
+                <label for="perfInput" class="font-bold text-slate-700">🎯 성과평가 등급</label>
+                <select id="perfInput" class="w-full px-2 py-2 text-sm md:text-base font-bold border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <option value="A">A</option>
+                    <option value="B+">B+</option>
+                    <option value="B0" selected>B⁰</option>
+                    <option value="B-">B-</option>
+                    <option value="C">C</option>
+                </select>
+            </div>
+
+            <!-- Competency Grade Select -->
+            <div class="flex flex-col gap-2 lg:col-span-2">
+                <label for="compInput" class="font-bold text-slate-700">💪 역량평가 등급</label>
+                <select id="compInput" class="w-full px-2 py-2 text-sm md:text-base font-bold border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <option value="A">A (기본급 α+5%)</option>
+                    <option value="B+">B+ (기본급 α+2.5%)</option>
+                    <option value="B0" selected>B⁰ (기본급 α+1%)</option>
+                    <option value="B-">B- (기본급 α-1.5%)</option>
+                    <option value="C">C (동결)</option>
+                </select>
+            </div>
+
+            <!-- Year/Month Input -->
+            <div class="flex flex-col gap-2 lg:col-span-2">
+                <label class="font-bold text-slate-700 whitespace-nowrap">🗓️ 적용 일자 (년/월)</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="yearInput" class="w-full px-3 py-2 text-base md:text-lg font-bold border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="년도">
+                    <span class="font-bold text-slate-600">년</span>
+                    <input type="number" id="monthInput" value="12" min="1" max="12" class="w-full px-3 py-2 text-base md:text-lg font-bold border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="월">
+                    <span class="font-bold text-slate-600">월</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Banner -->
+        <div class="bg-blue-50 border-b border-blue-200 p-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex flex-wrap gap-4 text-center lg:text-left justify-center lg:justify-start">
+                <div>
+                    <span class="text-slate-500 text-sm font-bold block mb-1">적용 인상률 / 성과급</span>
+                    <span class="text-xl font-bold text-blue-700"><span id="totalRateText">4.0</span>% / <span id="bonusRateText">0</span>%</span>
+                </div>
+                <div class="border-l-2 border-blue-200 pl-4">
+                    <span class="text-slate-500 text-sm font-bold block mb-1">이전 대비 총 인상액</span>
+                    <span class="text-xl font-bold text-blue-700" id="increaseAmountText">+0원</span>
+                </div>
+                <div class="border-l-2 border-blue-200 pl-4 bg-emerald-50 rounded px-2 border-r-2">
+                    <span class="text-emerald-700 text-sm font-bold block mb-1">월 실수령액 (세후 예상)</span>
+                    <span class="text-2xl font-bold text-emerald-600" id="monthlyNetText">0원</span>
+                </div>
+            </div>
+            
+            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-bold shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                <span id="addBtnText">결과 표에 누적하기</span>
+            </button>
+        </div>
+
+        <!-- Table Section -->
+        <div class="overflow-x-auto p-6">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>년도</th>
+                        <th>월</th>
+                        <th>적용조건<br>(직책/성과/역량)</th>
+                        <th>계약연봉<br>(세전 총액)</th>
+                        <th class="bg-emerald-500">월 실수령액<br>(세후 추정)</th>
+                        <th>기본급(A)</th>
+                        <th>역량급(B)</th>
+                        <th>개인성과급(C)</th>
+                        <th>자기계발비(D)</th>
+                        <th>업무활동비(E)</th>
+                        <th>연장수당(F)</th>
+                        <th>기준연봉<br>(B0기준)</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Javascript will populate this -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Info Section -->
+        <div class="bg-slate-50 p-6 text-sm text-slate-600 border-t border-slate-200">
+            <h4 class="font-bold text-slate-700 mb-2">💡 계산 및 활용 가이드:</h4>
+            <ul class="list-disc pl-5 space-y-1">
+                <li><b>월 실수령액 추정치</b>는 첨부해주신 실제 급여 명세서의 공제 비율(건강보험, 국민연금, 소득세 등 약 17.5%)을 적용하여 도출된 실질적인 예상 수령액입니다.</li>
+                <li>입력값을 변경하면 하단 표의 <b>파란색 줄(예상)</b>에 실시간으로 반영됩니다. (표 내용이 많을 시 좌우로 스크롤 가능)</li>
+                <li><b>[결과 표에 누적하기]</b> 버튼을 누르면 해당 년도의 값이 저장되며, 이를 바탕으로 다음 해의 연봉을 시뮬레이션할 수 있습니다.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 과거 연봉 이력 팝업창(모달) -->
+    <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-800 text-white rounded-t-xl shrink-0">
+                <h2 class="text-xl font-bold">📋 나의 과거 연봉 이력 및 시뮬레이션 (2005 ~ )</h2>
+                <button onclick="toggleHistoryModal()" class="text-slate-300 hover:text-white font-bold text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-0 overflow-auto flex-1 bg-slate-50">
+                <table class="modal-table w-full m-0 border-0">
+                    <thead class="sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th>No</th>
+                            <th>연수</th>
+                            <th>나이</th>
+                            <th>직급</th>
+                            <th>회사</th>
+                            <th>계약연봉(세전)</th>
+                            <th class="bg-emerald-600">월 실수령액(추정)</th>
+                            <th>인상폭</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalStaticBody">
+                        <!-- Javascript will populate static history -->
+                    </tbody>
+                    <tbody id="modalDynamicBody">
+                        <!-- Javascript will populate this with accumulated records -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-200 text-right bg-white rounded-b-xl shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <button onclick="toggleHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-8 py-2 rounded font-bold transition shadow">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 0. 과거 연봉 하드코딩 데이터 ---
+        const staticHistoryData = [
+            { year: "2005", age: 26, pos: '사원', comp: '버추얼넷', salary: 15000000, inc: 0 },
+            { year: "2006", age: 27, pos: '', comp: '버추얼넷', salary: 15000000, inc: 0 },
+            { year: "2007", age: 28, pos: '', comp: '버추얼넷', salary: 15600000, inc: 600000 },
+            { year: "2008", age: 29, pos: '', comp: 'SKC&C', salary: 21000000, inc: 5400000 },
+            { year: "2009", age: 30, pos: '', comp: 'SKC&C', salary: 21000000, inc: 0 },
+            { year: "2010", age: 31, pos: '대리', comp: '서경NCS', salary: 22500000, inc: 1500000, color: "bg-blue-50 border-t-2 border-slate-300" },
+            { year: "2011", age: 32, pos: '', comp: '서경NCS', salary: 25000000, inc: 2500000 },
+            { year: "2012", age: 33, pos: '', comp: '서경NCS', salary: 26200000, inc: 1200000 },
+            { year: "2013", age: 34, pos: '', comp: '서경NCS', salary: 29700000, inc: 3500000 },
+            { year: "2014", age: 35, pos: '', comp: '두온네트웍스', salary: 34000000, inc: 4300000 },
+            { year: "2015", age: 36, pos: '', comp: '두온네트웍스', salary: 36400000, inc: 2400000 },
+            { year: "2015.9", age: 36, pos: '', comp: '서경NCS', salary: 38200000, inc: 1800000 },
+            { year: "2016.9", age: 37, pos: '', comp: '동부', salary: 42000000, inc: 3800000 },
+            { year: "2017", age: 38, pos: '', comp: 'DB Inc', salary: 43900000, inc: 1900000 },
+            { year: "2018", age: 39, pos: '', comp: 'DB Inc', salary: 47345000, inc: 3445000 },
+            { year: "2019", age: 40, pos: '', comp: 'DB Inc', salary: 49144200, inc: 1799200 },
+            { year: "2020", age: 41, pos: '과장', comp: 'DB Inc', salary: 59298000, inc: 10153800, color: "bg-blue-50 border-t-2 border-slate-300" },
+            { year: "2021", age: 42, pos: '', comp: 'DB Inc', salary: 61077100, inc: 1779100 },
+            { year: "2022", age: 43, pos: '', comp: 'DB Inc', salary: 66190900, inc: 5113800 },
+            { year: "2023", age: 44, pos: '', comp: 'DB Inc', salary: 75746200, inc: 9555300 },
+            { year: "2023.12", age: 45, pos: '부장', comp: '오라클', salary: 91000000, inc: 15253800, color: "bg-blue-50 border-t-2 border-slate-300" },
+            { year: "2024.6", age: 45, pos: '', comp: '오라클', salary: 94185000, inc: 3185000 },
+            { year: "2025", age: 46, pos: '프로', comp: 'DB Inc', salary: 85000000, inc: -9185000, color: "bg-amber-50 border-t-2 border-slate-300" } // 실제론 86647800이지만 표 기준
+        ];
+
+        // 1. 초기 2025년 시뮬레이션 원본 데이터
+        const initialRecord = {
+            year: 2025,
+            month: 12,
+            conditions: "기본값",
+            a: 61898900,
+            b: 0,
+            c: 0,
+            d: 0,
+            e: 1200000,
+            f: 23548900,
+            b0: 85000000,
+            total: 86647800
+        };
+
+        // 2. 로컬 스토리지에서 기록 불러오기 (없으면 초기값 세팅)
+        let historyRecords = JSON.parse(localStorage.getItem('salarySimHistory')) || [initialRecord];
+        let currentPreview = null; // 현재 입력에 따른 다음 해 예상 결과
+
+        // DOM Elements
+        const alphaInput = document.getElementById('alphaInput');
+        const posInput = document.getElementById('posInput');
+        const perfInput = document.getElementById('perfInput');
+        const compInput = document.getElementById('compInput');
+        const yearInput = document.getElementById('yearInput');
+        const monthInput = document.getElementById('monthInput');
+        
+        const totalRateText = document.getElementById('totalRateText');
+        const bonusRateText = document.getElementById('bonusRateText');
+        const increaseAmountText = document.getElementById('increaseAmountText');
+        const monthlyNetText = document.getElementById('monthlyNetText');
+        const addBtnText = document.getElementById('addBtnText');
+        const tableBody = document.getElementById('tableBody');
+
+        // 유틸 함수
+        function formatCurrency(num) { return num.toLocaleString('ko-KR'); }
+        function saveToLocal() { localStorage.setItem('salarySimHistory', JSON.stringify(historyRecords)); }
+
+        // 월 실수령액 계산 로직 (급여 명세서 비율 기반)
+        function getMonthlyNet(annualTotal) {
+            let monthlyGross = Math.floor(annualTotal / 12);
+            // 순수 정기 공제(건강보험 연말정산 12,510원, 동호회비 20,000원 제외) 기준
+            // 지급 총액: 7,220,660 / 순수 정기 공제액: 1,226,070 / 순수 세후: 5,994,590
+            // 약 83.02% 의 수령 비율을 가집니다. (실제 공제율 약 16.98%)
+            let net = Math.floor(monthlyGross * 0.8302); 
+            return net;
+        }
+
+        // 등급별 인상률 가져오기
+        function getGradeRate(grade, alpha) {
+            if (grade === 'A') return alpha + 5;
+            if (grade === 'B+') return alpha + 2.5;
+            if (grade === 'B0') return alpha + 1;
+            if (grade === 'B-') return alpha - 1.5;
+            if (grade === 'C') return 0;
+            return 0;
+        }
+
+        // 드롭다운 텍스트 업데이트
+        function updatePerfDropdownLabels() {
+            let pos = posInput.value;
+            let options = perfInput.options;
+            for (let i = 0; i < options.length; i++) {
+                let val = options[i].value;
+                let baseText = "", bonusText = "";
+                if (val === 'A') { baseText = "α+5%"; bonusText = pos === 'head' ? "38%" : "19%"; }
+                else if (val === 'B+') { baseText = "α+2.5%"; bonusText = pos === 'head' ? "19%" : "9%"; }
+                else if (val === 'B0') { baseText = "α+1%"; bonusText = "0%"; }
+                else if (val === 'B-') { baseText = "α-1.5%"; bonusText = "0%"; }
+                else if (val === 'C') { baseText = "동결"; bonusText = "0%"; }
+                options[i].text = `${val} (기본급 ${baseText} / 성과급 ${bonusText})`;
+            }
+        }
+
+        // 계산 및 화면 렌더링 메인 로직
+        function updateSimulation() {
+            const lastRecord = historyRecords[historyRecords.length - 1];
+            let nextYear = parseInt(yearInput.value) || (lastRecord.year + 1);
+            let nextMonth = parseInt(monthInput.value) || 12;
+
+            if (!yearInput.value) yearInput.value = nextYear;
+
+            let alpha = parseFloat(alphaInput.value) || 0;
+            let pos = posInput.value;
+            let perf = perfInput.value;
+            let comp = compInput.value;
+
+            let perfRate = getGradeRate(perf, alpha);
+            let compRate = getGradeRate(comp, alpha);
+            let totalRatePercent = (perfRate * 0.5) + (compRate * 0.5);
+            let multiplier = 1 + (totalRatePercent / 100);
+
+            let newA = Math.floor(lastRecord.a * multiplier);
+            let newF = Math.floor(lastRecord.f * multiplier);
+            let newB0 = Math.floor(lastRecord.b0 * multiplier);
+            let eFixed = lastRecord.e;
+
+            let bonusRate = 0;
+            if (pos === 'head') {
+                if (perf === 'A') bonusRate = 38;
+                else if (perf === 'B+') bonusRate = 19;
+            } else {
+                if (perf === 'A') bonusRate = 19;
+                else if (perf === 'B+') bonusRate = 9;
+            }
+            let newC = Math.floor(newA * (bonusRate / 100));
+
+            let newTotal = newA + newC + eFixed + newF;
+            let increaseAmount = newTotal - lastRecord.total;
+            let expectedMonthlyNet = getMonthlyNet(newTotal); // 월 실수령액 계산
+            
+            let posKor = pos === 'head' ? '부서장' : '부서원';
+            let conditionStr = `${posKor} / 성과${perf} / 역량${comp}`;
+
+            currentPreview = {
+                year: nextYear,
+                month: nextMonth,
+                conditions: conditionStr,
+                a: newA, b: 0, c: newC, d: 0, e: eFixed, f: newF, b0: newB0, total: newTotal, monthlyNet: expectedMonthlyNet
+            };
+
+            // UI 배너 업데이트
+            totalRateText.innerText = totalRatePercent.toFixed(2);
+            bonusRateText.innerText = bonusRate;
+            let sign = increaseAmount > 0 ? "+" : "";
+            increaseAmountText.innerText = sign + formatCurrency(increaseAmount) + "원";
+            monthlyNetText.innerText = formatCurrency(expectedMonthlyNet) + "원";
+            addBtnText.innerText = `${nextYear}년 ${nextMonth}월 결과 표에 누적하기`;
+
+            renderTable();
+        }
+
+        // 메인 화면 표 그리기
+        function renderTable() {
+            tableBody.innerHTML = '';
+            
+            // 확정된 히스토리
+            historyRecords.forEach((record, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'bg-history';
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${record.year}</td>
+                    <td>${record.month || 12}</td>
+                    <td class="text-sm text-slate-500 font-medium whitespace-nowrap">${record.conditions}</td>
+                    <td class="font-bold text-slate-800">${formatCurrency(record.total)}</td>
+                    <td class="font-bold text-emerald-600">${formatCurrency(getMonthlyNet(record.total))}</td>
+                    <td>${formatCurrency(record.a)}</td>
+                    <td>${record.b}</td>
+                    <td>${formatCurrency(record.c)}</td>
+                    <td>${record.d}</td>
+                    <td>${formatCurrency(record.e)}</td>
+                    <td>${formatCurrency(record.f)}</td>
+                    <td>${formatCurrency(record.b0)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // 예상치(미리보기)
+            if (currentPreview) {
+                const tr = document.createElement('tr');
+                tr.className = 'bg-highlight';
+                tr.innerHTML = `
+                    <td>${historyRecords.length + 1}</td>
+                    <td>${currentPreview.year} <span class="text-xs text-blue-500 font-bold block">(예상)</span></td>
+                    <td>${currentPreview.month}</td>
+                    <td class="text-sm text-blue-600 font-bold whitespace-nowrap">${currentPreview.conditions}</td>
+                    <td class="font-bold text-blue-700">${formatCurrency(currentPreview.total)}</td>
+                    <td class="font-bold text-emerald-500">${formatCurrency(currentPreview.monthlyNet)}</td>
+                    <td class="text-blue-700">${formatCurrency(currentPreview.a)}</td>
+                    <td class="text-blue-700">${currentPreview.b}</td>
+                    <td class="text-blue-700">${formatCurrency(currentPreview.c)}</td>
+                    <td class="text-blue-700">${currentPreview.d}</td>
+                    <td class="text-blue-700">${formatCurrency(currentPreview.e)}</td>
+                    <td class="text-blue-700">${formatCurrency(currentPreview.f)}</td>
+                    <td class="text-blue-700">${formatCurrency(currentPreview.b0)}</td>
+                `;
+                tableBody.appendChild(tr);
+            }
+
+            renderModalStaticTable();
+            renderModalDynamicTable();
+        }
+
+        // 모달: 과거 고정 데이터 렌더링
+        function renderModalStaticTable() {
+            const modalStaticBody = document.getElementById('modalStaticBody');
+            modalStaticBody.innerHTML = '';
+
+            staticHistoryData.forEach((row, idx) => {
+                const incSign = row.inc > 0 ? '+' : '';
+                const incColor = row.inc > 0 ? 'text-blue-600 font-bold' : (row.inc < 0 ? 'text-red-500 font-bold' : 'text-slate-400');
+                const incText = row.inc === 0 ? '-' : `${incSign}${formatCurrency(row.inc)}`;
+                const trClass = row.color ? row.color : "bg-white hover:bg-slate-50";
+                
+                const tr = document.createElement('tr');
+                tr.className = trClass;
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td class="font-bold">${row.year}</td>
+                    <td>${row.age}</td>
+                    <td>${row.pos}</td>
+                    <td>${row.comp}</td>
+                    <td class="text-right font-bold text-slate-800">${formatCurrency(row.salary)}</td>
+                    <td class="text-right font-bold text-emerald-600 bg-emerald-50">${formatCurrency(getMonthlyNet(row.salary))}</td>
+                    <td class="text-right ${incColor}">${incText}</td>
+                `;
+                modalStaticBody.appendChild(tr);
+            });
+        }
+
+        // 모달: 동적 시뮬레이션 데이터 렌더링
+        function renderModalDynamicTable() {
+            const modalDynamicBody = document.getElementById('modalDynamicBody');
+            modalDynamicBody.innerHTML = '';
+            
+            for (let i = 1; i < historyRecords.length; i++) {
+                const record = historyRecords[i];
+                const prevRecord = historyRecords[i-1];
+                
+                const no = staticHistoryData.length + i;
+                const baseYear = 2025;
+                const baseAge = 46;
+                let age = Math.floor(baseAge + (record.year - baseYear)); 
+
+                const pos = record.conditions.includes('부서장') ? '부서장' : '부서원';
+                const increase = record.total - prevRecord.total;
+                
+                const sign = increase > 0 ? '+' : '';
+                const colorClass = increase > 0 ? 'text-blue-600' : (increase < 0 ? 'text-red-500' : 'text-slate-400');
+                
+                let yearStr = record.year.toString();
+                if (record.month && record.month !== 12) { yearStr += `.${record.month}`; }
+
+                const tr = document.createElement('tr');
+                tr.className = 'bg-emerald-50 hover:bg-emerald-100 border-t border-emerald-200 transition-colors';
+                tr.innerHTML = `
+                    <td class="relative">
+                        ${no}
+                        <span class="absolute top-1 right-1 text-[10px] text-emerald-600 font-bold px-1 bg-emerald-100 rounded">예상</span>
+                    </td>
+                    <td class="font-bold text-emerald-700">${yearStr}</td>
+                    <td>${age}</td>
+                    <td>${pos}</td>
+                    <td>DB Inc</td>
+                    <td class="text-right font-bold text-slate-800">${formatCurrency(record.total)}</td>
+                    <td class="text-right font-bold text-emerald-600 bg-emerald-100">${formatCurrency(getMonthlyNet(record.total))}</td>
+                    <td class="text-right font-bold ${colorClass}">${sign}${formatCurrency(increase)}</td>
+                `;
+                modalDynamicBody.appendChild(tr);
+            }
+        }
+
+        // 버튼 액션
+        function addRecord() {
+            if (currentPreview) {
+                historyRecords.push(currentPreview);
+                saveToLocal();
+                yearInput.value = parseInt(currentPreview.year) + 1;
+                updateSimulation(); 
+            }
+        }
+
+        function undoLast() {
+            if (historyRecords.length > 1) {
+                if (confirm(`${historyRecords[historyRecords.length-1].year}년 시뮬레이션 기록을 삭제하시겠습니까?`)) {
+                    historyRecords.pop();
+                    saveToLocal();
+                    yearInput.value = historyRecords[historyRecords.length - 1].year + 1;
+                    updateSimulation();
+                }
+            } else {
+                alert("기본 2025년 데이터는 삭제할 수 없습니다.");
+            }
+        }
+
+        function resetHistory() {
+            if (confirm("모든 누적 시뮬레이션 기록을 삭제하고 2025년으로 돌아가시겠습니까?")) {
+                historyRecords = [initialRecord];
+                saveToLocal();
+                yearInput.value = initialRecord.year + 1;
+                updateSimulation();
+            }
+        }
+
+        function toggleHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            if (modal.classList.contains('hidden')) { modal.classList.remove('hidden'); } 
+            else { modal.classList.add('hidden'); }
+        }
+
+        // 이벤트 리스너
+        alphaInput.addEventListener('input', updateSimulation);
+        posInput.addEventListener('change', () => { updatePerfDropdownLabels(); updateSimulation(); });
+        perfInput.addEventListener('change', updateSimulation);
+        compInput.addEventListener('change', updateSimulation);
+        yearInput.addEventListener('input', updateSimulation);
+        monthInput.addEventListener('input', updateSimulation);
+
+        // 최초 실행
+        updatePerfDropdownLabels();
+        updateSimulation();
+    </script>
+</body>
+</html>
