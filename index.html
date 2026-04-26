@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연봉 인상 시뮬레이터 v4.8</title>
+    <title>연봉 인상 시뮬레이터 v4.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* 기본 레이아웃: PC에서는 컴팩트하게, 모바일에서는 유연하게 */
@@ -37,22 +37,32 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 입력창 디자인 */
-        .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.8rem; font-weight: 800; color: #475569; }
+        .input-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 0.8rem; font-weight: 800; color: #475569; white-space: nowrap; }
         select, input { height: 40px !important; font-size: 0.95rem !important; border-radius: 10px !important; border: 1px solid #cbd5e1 !important; width: 100%; transition: all 0.2s; }
         input:focus, select:focus { border-color: #3b82f6 !important; ring: 3px; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         
-        /* 모바일용 스타일 보정 */
+        /* 모바일 전용 반응형 스타일 대폭 보정 */
         @media (max-width: 768px) {
             body { padding: 0.5rem !important; }
-            .main-container { border-radius: 1.5rem !important; }
-            .header-content { padding: 1rem !important; }
-            .input-section { padding: 1rem !important; }
-            .result-banner { padding: 1.5rem 1rem !important; flex-direction: column !important; text-align: center !important; }
-            .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; margin-bottom: 1rem; }
-            .result-item:last-child { margin-bottom: 0; }
-            .table-container { padding: 0.5rem !important; }
-            table { min-width: 1000px; }
-            th, td { padding: 8px 6px; font-size: 0.8rem; }
+            .main-container { border-radius: 1.25rem !important; }
+            .header-content { padding: 1rem 0.75rem !important; }
+            .input-section { padding: 1rem 0.75rem !important; }
+            
+            /* 결과 배너 숫자 잘림 방지 */
+            .result-banner { padding: 1.25rem 0.75rem !important; flex-direction: column !important; gap: 0.75rem !important; }
+            .result-item { border-left: none !important; padding-left: 0 !important; width: 100% !important; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.75rem; }
+            .result-item:last-child { border-bottom: none; padding-bottom: 0; }
+            
+            /* 수치 텍스트 크기 최적화 */
+            .val-large { font-size: 1.5rem !important; }
+            .val-xlarge { font-size: 1.85rem !important; }
+            
+            .table-container { padding: 0.25rem !important; }
+            table { min-width: 900px; } /* 모바일에서 표의 숨통을 조금 더 틔움 */
+            th, td { padding: 8px 4px; font-size: 0.75rem; }
+            
+            /* 버튼 텍스트가 넘치지 않게 조절 */
+            .btn-text { font-size: 0.7rem !important; }
         }
 
         .fade-in { animation: fadeIn 0.4s ease-out; }
@@ -64,7 +74,7 @@
     <!-- 로딩 오버레이 -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-95 z-[100] flex flex-col justify-center items-center text-center">
         <div class="loader mb-4 shadow-sm"></div>
-        <p class="text-slate-800 font-bold text-lg" id="loadingText">시스템 확인 중...</p>
+        <p class="text-slate-800 font-bold text-lg" id="loadingText">보안 시스템 확인 중...</p>
     </div>
 
     <!-- 커스텀 확인창 (Confirm Modal) -->
@@ -100,24 +110,24 @@
         
         <!-- 헤더 -->
         <div class="header-content bg-slate-800 text-white px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
-            <div class="flex flex-col sm:flex-row items-center gap-3">
-                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.8</span></h1>
+            <div class="flex flex-col sm:flex-row items-center gap-2 md:gap-3">
+                <h1 class="text-lg md:text-2xl font-black tracking-tight text-white">연봉 시뮬레이터 <span class="text-blue-400">v4.9</span></h1>
                 <div class="flex items-center gap-2">
-                    <span id="syncStatus" class="text-[10px] bg-slate-700 text-slate-400 border border-slate-600 px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
-                    <span id="userDisplay" class="text-[10px] text-slate-400 font-medium hidden sm:inline"></span>
+                    <span id="syncStatus" class="text-[9px] md:text-[10px] bg-slate-700 text-slate-400 border border-slate-600 px-2 md:px-3 py-0.5 rounded-full font-black transition-all">CONNECTING...</span>
+                    <span id="userDisplay" class="text-[9px] md:text-[10px] text-slate-400 font-medium hidden sm:inline"></span>
                 </div>
             </div>
-            <div class="flex flex-wrap justify-center gap-2">
-                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold transition shadow-sm">📋 이력보기</button>
-                <button onclick="askUndo()" class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold transition shadow-sm">↩ 삭제</button>
-                <button onclick="askReset()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs font-bold transition shadow-sm">🔄 초기화</button>
-                <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-900 text-slate-300 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-xs font-bold transition">로그아웃</button>
+            <div class="flex flex-wrap justify-center gap-1.5 md:gap-2">
+                <button onclick="toggleHistoryModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition shadow-sm">📋 이력보기</button>
+                <button onclick="askUndo()" class="bg-slate-600 hover:bg-slate-500 text-white px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition shadow-sm">↩ 삭제</button>
+                <button onclick="askReset()" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition shadow-sm">🔄 초기화</button>
+                <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-900 text-slate-300 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] md:text-xs font-bold transition">로그아웃</button>
             </div>
         </div>
 
         <!-- 입력 영역 -->
         <div class="input-section p-6 bg-white border-b border-slate-100">
-            <div class="grid grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6">
+            <div class="grid grid-cols-2 lg:grid-cols-12 gap-3 md:gap-6">
                 <div class="col-span-1 lg:col-span-2 input-group">
                     <label>📈 물가(α)</label>
                     <div class="relative">
@@ -142,10 +152,10 @@
                 </div>
                 <div class="col-span-2 lg:col-span-2 input-group">
                     <label>🗓️ 적용 시점</label>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
                         <input type="number" id="yearInput" class="flex-1 text-center font-bold" placeholder="년도">
                         <span class="font-bold text-slate-300">.</span>
-                        <input type="number" id="monthInput" value="12" min="1" max="12" class="w-16 text-center font-bold">
+                        <input type="number" id="monthInput" value="12" min="1" max="12" class="w-14 md:w-16 text-center font-bold">
                     </div>
                 </div>
             </div>
@@ -153,23 +163,23 @@
 
         <!-- 결과 요약 배너 -->
         <div class="result-banner bg-blue-50 border-y border-blue-100 px-8 py-6 flex flex-col lg:flex-row justify-between items-center gap-6">
-            <div class="flex flex-wrap lg:flex-nowrap gap-8 lg:gap-10 text-center lg:text-left justify-center lg:justify-start w-full">
-                <div class="result-item min-w-[120px]">
-                    <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Target Rate</span>
-                    <span class="text-2xl font-black text-blue-700 tracking-tighter"><span id="totalRateText">4.0</span>% / <span id="bonusRateText">0</span>%</span>
+            <div class="flex flex-wrap lg:flex-nowrap gap-4 md:gap-10 text-center lg:text-left justify-center lg:justify-start w-full">
+                <div class="result-item min-w-[100px]">
+                    <span class="text-slate-500 text-[9px] md:text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Target Rate</span>
+                    <span class="val-large text-xl md:text-2xl font-black text-blue-700 tracking-tighter"><span id="totalRateText">4.0</span>% / <span id="bonusRateText">0</span>%</span>
                 </div>
-                <div class="result-item border-l border-blue-200 pl-10 min-w-[160px]">
-                    <span class="text-slate-500 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Annual Increase</span>
-                    <span class="text-2xl font-black text-blue-700 tracking-tighter" id="increaseAmountText">+0원</span>
+                <div class="result-item border-l border-blue-200 pl-0 md:pl-10 min-w-[130px]">
+                    <span class="text-slate-500 text-[9px] md:text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Annual Increase</span>
+                    <span class="val-large text-xl md:text-2xl font-black text-blue-700 tracking-tighter" id="increaseAmountText">+0원</span>
                 </div>
-                <div class="result-item border-l border-blue-200 pl-10">
-                    <span class="text-emerald-700 text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Monthly Net (Est.)</span>
-                    <span class="text-3xl font-black text-emerald-600 tracking-tighter" id="monthlyNetText">0원</span>
+                <div class="result-item border-l border-blue-200 pl-0 md:pl-10">
+                    <span class="text-emerald-700 text-[9px] md:text-[10px] font-bold block mb-1 uppercase tracking-wider opacity-70">Monthly Net (Est.)</span>
+                    <span class="val-xlarge text-2xl md:text-3xl font-black text-emerald-600 tracking-tighter" id="monthlyNetText">0원</span>
                 </div>
             </div>
             
-            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg transition transform active:scale-95 flex items-center justify-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+            <button onclick="addRecord()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-base md:text-lg font-bold shadow-lg transition transform active:scale-95 flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
                 <span>결과 저장하기</span>
             </button>
         </div>
@@ -271,9 +281,9 @@
 
         window.updateSyncLabel = (text, type = 'success') => {
             syncStatus.textContent = text;
-            if(type === 'loading') syncStatus.className = 'text-[10px] bg-amber-500 text-white px-3 py-0.5 rounded-full font-black';
-            else if(type === 'error') syncStatus.className = 'text-[10px] bg-red-500 text-white px-3 py-0.5 rounded-full font-black';
-            else syncStatus.className = 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-0.5 rounded-full font-black';
+            if(type === 'loading') syncStatus.className = 'text-[9px] md:text-[10px] bg-amber-500 text-white px-2 md:px-3 py-0.5 rounded-full font-black';
+            else if(type === 'error') syncStatus.className = 'text-[9px] md:text-[10px] bg-red-500 text-white px-2 md:px-3 py-0.5 rounded-full font-black';
+            else syncStatus.className = 'text-[9px] md:text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 md:px-3 py-0.5 rounded-full font-black';
         };
 
         window.saveDataToCloud = async function() {
